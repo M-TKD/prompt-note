@@ -1,7 +1,7 @@
 import { PromptDocument, SAMPLE_PROMPTS } from "./types";
 
 const STORAGE_KEY = "promptnote_documents";
-const SEED_KEY = "promptnote_seeded";
+const SEED_KEY = "promptnote_seeded_v2";
 const DRAFT_KEY = "promptnote_draft";
 
 function getAll(): PromptDocument[] {
