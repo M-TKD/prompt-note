@@ -23,7 +23,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#fafafa",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -34,10 +34,10 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white`}
         style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}
       >
-        <main className="pb-20 max-w-lg mx-auto">
+        <main className="pb-16 max-w-lg mx-auto">
           {children}
         </main>
         <BottomNav />

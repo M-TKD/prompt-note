@@ -30,20 +30,22 @@ export default function FeedPage() {
   };
 
   return (
-    <div className="px-5 pt-12">
-      <h1 className="text-3xl font-bold tracking-tight mb-1">みつける</h1>
-      <p className="text-sm text-neutral-400 mb-6">みんなのプロンプト</p>
+    <div className="px-6 pt-14">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a]">Explore</h1>
+        <p className="text-xs text-[#9ca3af] mt-1 font-mono">Community prompts</p>
+      </div>
 
       {/* Categories */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+      <div className="flex gap-3 mb-4 overflow-x-auto pb-1">
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
             onClick={() => setCategory(cat)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${
+            className={`px-3 py-1 rounded text-[11px] font-mono whitespace-nowrap ${
               category === cat
-                ? "bg-neutral-900 text-white"
-                : "text-neutral-400 hover:text-neutral-600"
+                ? "bg-[#1a1a1a] text-white"
+                : "text-[#d1d5db] hover:text-[#6b7280]"
             }`}
           >
             {cat}
@@ -52,16 +54,16 @@ export default function FeedPage() {
       </div>
 
       {/* Sort */}
-      <div className="flex gap-3 mb-5 text-xs">
+      <div className="flex gap-4 mb-6 text-[11px] border-b border-[#f0f0f0]">
         {[
-          { key: "popular" as const, label: "人気" },
-          { key: "recent" as const, label: "新着" },
+          { key: "popular" as const, label: "Popular" },
+          { key: "recent" as const, label: "Recent" },
         ].map((s) => (
           <button
             key={s.key}
             onClick={() => setSort(s.key)}
-            className={`font-medium transition ${
-              sort === s.key ? "text-neutral-900 underline underline-offset-4" : "text-neutral-400"
+            className={`pb-2 font-mono tracking-wide ${
+              sort === s.key ? "text-[#1a1a1a] border-b-2 border-[#1a1a1a]" : "text-[#d1d5db]"
             }`}
           >
             {s.label}
@@ -71,36 +73,36 @@ export default function FeedPage() {
 
       {/* Feed */}
       {docs.length === 0 ? (
-        <div className="text-center py-24">
-          <p className="text-neutral-300 text-sm">まだ公開Promptがありません</p>
-          <p className="text-neutral-200 text-xs mt-1">最初の投稿者になりましょう</p>
+        <div className="text-center py-28">
+          <p className="text-[#d1d5db] text-sm">No public prompts yet</p>
+          <p className="text-[#e5e7eb] text-xs mt-1.5 font-mono">Be the first</p>
         </div>
       ) : (
-        <div className="space-y-0">
+        <div>
           {docs.map((doc) => (
             <div
               key={doc.id}
               onClick={() => setSelected(doc)}
-              className="py-4 border-b border-neutral-100 last:border-0 cursor-pointer active:bg-neutral-50 transition"
+              className="py-4 border-b border-[#f0f0f0] last:border-0 cursor-pointer"
             >
-              <p className="font-semibold text-sm mb-1">{doc.title || doc.bodyMd.split("\n")[0]?.slice(0, 40)}</p>
-              <p className="text-xs text-neutral-400 line-clamp-2 mb-2 leading-relaxed">{doc.bodyMd.replace(/\n/g, " ")}</p>
+              <p className="font-medium text-sm text-[#1a1a1a] mb-1">{doc.title || doc.bodyMd.split("\n")[0]?.slice(0, 40)}</p>
+              <p className="text-xs text-[#9ca3af] line-clamp-2 mb-2 leading-relaxed">{doc.bodyMd.replace(/\n/g, " ")}</p>
 
               {doc.tags.length > 0 && (
                 <div className="flex gap-1.5 mb-2">
                   {doc.tags.slice(0, 3).map((t) => (
-                    <span key={t} className="text-[10px] text-neutral-400">#{t}</span>
+                    <span key={t} className="text-[10px] text-[#d1d5db] font-mono">#{t}</span>
                   ))}
                 </div>
               )}
 
-              <div className="flex items-center gap-4 text-[11px] text-neutral-300">
-                <button onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }} className="flex items-center gap-1 hover:text-amber-500">
-                  <Heart className="w-3.5 h-3.5" /> {doc.likeCount}
+              <div className="flex items-center gap-4 text-[10px] text-[#d1d5db] font-mono">
+                <button onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }} className="flex items-center gap-1 hover:text-[#4F46E5]">
+                  <Heart className="w-3 h-3" /> {doc.likeCount}
                 </button>
-                <span className="flex items-center gap-1"><GitFork className="w-3.5 h-3.5" /> {doc.forkCount}</span>
-                <button onClick={(e) => { e.stopPropagation(); handleCopy(doc); }} className="ml-auto hover:text-neutral-600">
-                  {copiedId === doc.id ? <Check className="w-3.5 h-3.5 text-amber-500" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="flex items-center gap-1"><GitFork className="w-3 h-3" /> {doc.forkCount}</span>
+                <button onClick={(e) => { e.stopPropagation(); handleCopy(doc); }} className="ml-auto hover:text-[#6b7280]">
+                  {copiedId === doc.id ? <Check className="w-3 h-3 text-[#4F46E5]" /> : <Copy className="w-3 h-3" />}
                 </button>
               </div>
             </div>
@@ -110,26 +112,26 @@ export default function FeedPage() {
 
       {/* Detail modal */}
       {selected && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-end justify-center" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={() => setSelected(null)}>
           <div className="bg-white w-full max-w-lg rounded-t-2xl p-6 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="w-8 h-1 bg-neutral-200 rounded-full mx-auto mb-4" />
-            <h2 className="font-bold text-lg tracking-tight mb-2">{selected.title || "プロンプト詳細"}</h2>
+            <div className="w-8 h-0.5 bg-[#e5e7eb] rounded-full mx-auto mb-4" />
+            <h2 className="font-bold text-base tracking-tight mb-2">{selected.title || "Prompt Detail"}</h2>
             <div className="flex gap-1.5 mb-3">
-              <span className="text-[11px] text-neutral-400 font-medium">{TYPE_CONFIG[selected.type].label}</span>
-              {selected.tags.map((t) => <span key={t} className="text-[11px] text-neutral-400">#{t}</span>)}
+              <span className="text-[10px] text-[#9ca3af] font-mono">{TYPE_CONFIG[selected.type].label}</span>
+              {selected.tags.map((t) => <span key={t} className="text-[10px] text-[#d1d5db] font-mono">#{t}</span>)}
             </div>
-            <div className="markdown-preview bg-neutral-50 p-4 rounded-xl mb-4">
+            <div className="markdown-preview bg-[#fafafa] p-4 rounded-xl mb-4 border border-[#f0f0f0]">
               <MarkdownPreview content={selected.bodyMd} />
             </div>
             <div className="flex gap-2">
-              <button onClick={() => handleCopy(selected)} className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm font-medium flex items-center justify-center gap-1 hover:bg-neutral-50">
-                <Copy className="w-4 h-4" /> コピー
+              <button onClick={() => handleCopy(selected)} className="flex-1 py-2.5 border border-[#f0f0f0] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa]">
+                <Copy className="w-3.5 h-3.5" /> Copy
               </button>
-              <Link href={`/editor?mode=quick`} onClick={() => { store.fork(selected.id); }} className="flex-1 py-2.5 bg-neutral-900 text-white rounded-xl text-sm font-semibold text-center flex items-center justify-center gap-1 active:scale-[0.98] transition-transform">
-                <GitFork className="w-4 h-4" /> フォーク
+              <Link href={`/editor?mode=quick`} onClick={() => { store.fork(selected.id); }} className="flex-1 py-2.5 bg-[#1a1a1a] text-white rounded-xl text-xs font-medium text-center flex items-center justify-center gap-1">
+                <GitFork className="w-3.5 h-3.5" /> Fork
               </Link>
             </div>
-            <button onClick={() => setSelected(null)} className="w-full text-center text-xs text-neutral-400 py-2 mt-2">閉じる</button>
+            <button onClick={() => setSelected(null)} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
           </div>
         </div>
       )}
