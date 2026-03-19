@@ -211,14 +211,14 @@ function EditorContent() {
 
         <div className="flex-1" />
 
-        {/* Promote — prominent position */}
+        {/* Boost — prominent position */}
         {isNote && hasContent && (
           <button
             onClick={() => setShowPromote(true)}
             className="text-[11px] flex items-center gap-1.5 bg-[#4F46E5] text-white px-3 py-1 rounded-full font-medium"
           >
             <ArrowUpCircle className="w-3 h-3" />
-            Promote
+            Boost
           </button>
         )}
         {/* Send to AI — prominent position */}
@@ -419,8 +419,8 @@ function PromoteSheet({ onPromote, onSendToAI, onClose }: { onPromote: (t: Docum
     <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
       <div className="bg-white w-full max-w-lg rounded-t-2xl p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
         <div className="w-8 h-0.5 bg-[#e5e7eb] rounded-full mx-auto mb-2" />
-        <h2 className="font-bold text-base text-center tracking-tight">Promote to Prompt</h2>
-        <p className="text-[11px] text-[#9ca3af] text-center font-mono">AI review, sharing, and send to AI apps</p>
+        <h2 className="font-bold text-base text-center tracking-tight">Boost</h2>
+        <p className="text-[11px] text-[#9ca3af] text-center font-mono">メモをPromptに昇格 → AI添削・共有・送信</p>
         <button onClick={() => onPromote("prompt")} className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#f0f0f0] hover:border-[#4F46E5]/30 hover:bg-[#EEF2FF]/20">
           <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center"><WandSparkles className="w-4 h-4 text-[#4F46E5]" /></div>
           <div className="text-left flex-1"><p className="font-medium text-sm">Prompt</p><p className="text-[10px] text-[#9ca3af] font-mono">Save as AI instruction</p></div>
@@ -433,7 +433,7 @@ function PromoteSheet({ onPromote, onSendToAI, onClose }: { onPromote: (t: Docum
         </button>
         <div className="pt-2">
           <button onClick={onSendToAI} className="w-full py-3 bg-[#1a1a1a] text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2">
-            <Send className="w-4 h-4" /> Promote & Send to AI
+            <Send className="w-4 h-4" /> Boost & Send to AI
           </button>
         </div>
         <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-1">Cancel</button>
