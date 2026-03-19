@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { HelpCircle, ChevronRight } from "lucide-react";
+
 export default function SettingsPage() {
   return (
     <div className="px-6 pt-14">
@@ -35,6 +38,20 @@ export default function SettingsPage() {
             </div>
             <span className="text-[10px] text-[#d1d5db] font-mono">Coming soon</span>
           </div>
+        </div>
+      </section>
+
+      {/* How to use */}
+      <section className="mb-8">
+        <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">Guide</h2>
+        <div className="border-t border-[#f0f0f0]">
+          <Link href="/howto" className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0]">
+            <div className="flex items-center gap-2.5">
+              <HelpCircle className="w-4 h-4 text-[#9ca3af]" />
+              <span className="text-sm text-[#1a1a1a]">How it works</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
+          </Link>
         </div>
       </section>
 

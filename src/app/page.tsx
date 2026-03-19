@@ -4,15 +4,18 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { store } from "@/lib/store";
 import { PromptDocument, TYPE_CONFIG, DocumentType } from "@/lib/types";
-import { Trash2 } from "lucide-react";
+import { Trash2, HelpCircle } from "lucide-react";
 
 export default function HomePage() {
   const [documents, setDocuments] = useState<PromptDocument[]>([]);
   const [filter, setFilter] = useState<DocumentType | "all">("all");
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     setDocuments(store.getDocuments());
+    const seen = localStorage.getItem("promptnote_onboarding_seen");
+    if (!seen) setShowOnboarding(true);
   }, []);
 
   const filtered = filter === "all" ? documents : documents.filter((d) => d.type === filter);
@@ -67,6 +70,35 @@ export default function HomePage() {
               <p className="text-xs text-[#9ca3af] mt-1">AI添削や共有が使えます</p>
             </div>
             <button onClick={() => setSuggestionDismissed(true)} className="text-[#d1d5db] text-xs">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding banner - first visit */}
+      {showOnboarding && (
+        <div className="mb-6 p-4 bg-[#fafafa] border border-[#f0f0f0] rounded-xl">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center shrink-0">
+              <HelpCircle className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-sm text-[#1a1a1a]">PromptNote へようこそ</p>
+              <p className="text-xs text-[#9ca3af] mt-0.5 leading-relaxed">メモを書いて、Promptに磨いて、AIに送る。</p>
+              <div className="flex items-center gap-3 mt-3">
+                <Link
+                  href="/howto"
+                  className="text-[11px] font-medium text-[#4F46E5]"
+                >
+                  使い方を見る →
+                </Link>
+                <button
+                  onClick={() => { setShowOnboarding(false); localStorage.setItem("promptnote_onboarding_seen", "1"); }}
+                  className="text-[11px] text-[#d1d5db]"
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
