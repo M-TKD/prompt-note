@@ -113,14 +113,29 @@ function EditorContent() {
     setTagInput("");
   };
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const insertMarkdown = (prefix: string, suffix = "") => {
-    const textarea = document.querySelector("textarea");
+    const textarea = textareaRef.current;
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selected = bodyMd.substring(start, end);
     const replacement = `${prefix}${selected || "text"}${suffix}`;
     setBodyMd(bodyMd.substring(0, start) + replacement + bodyMd.substring(end));
+    // Restore focus
+    setTimeout(() => { textarea.focus(); textarea.selectionStart = textarea.selectionEnd = start + replacement.length; }, 0);
+  };
+
+  // Insert a single character at cursor (for symbol bar)
+  const insertChar = (char: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newBody = bodyMd.substring(0, start) + char + bodyMd.substring(end);
+    setBodyMd(newBody);
+    setTimeout(() => { textarea.focus(); textarea.selectionStart = textarea.selectionEnd = start + char.length; }, 0);
   };
 
   const handleCopy = () => {
@@ -272,6 +287,7 @@ function EditorContent() {
           </div>
         ) : (
           <textarea
+            ref={textareaRef}
             value={bodyMd}
             onChange={(e) => setBodyMd(e.target.value)}
             placeholder={isQuickMemo ? "Write something..." : "Write in Markdown...\n\nUse {{variable}} for template variables"}
@@ -281,28 +297,40 @@ function EditorContent() {
         )}
       </div>
 
-      {/* Markdown toolbar */}
+      {/* Symbol shortcut bar (Type-style) */}
       {!showPreview && (
-        <div className="flex items-center gap-0 px-1 py-0.5 border-t border-[#f0f0f0] overflow-x-auto">
-          {[
-            { icon: <Heading1 className="w-3.5 h-3.5" />, action: () => insertMarkdown("# ") },
-            { icon: <Heading2 className="w-3.5 h-3.5" />, action: () => insertMarkdown("## ") },
-            { icon: <Bold className="w-3.5 h-3.5" />, action: () => insertMarkdown("**", "**") },
-            { icon: <Italic className="w-3.5 h-3.5" />, action: () => insertMarkdown("_", "_") },
-            { icon: <Code className="w-3.5 h-3.5" />, action: () => insertMarkdown("`", "`") },
-            { icon: <List className="w-3.5 h-3.5" />, action: () => insertMarkdown("- ") },
-            { icon: <ListOrdered className="w-3.5 h-3.5" />, action: () => insertMarkdown("1. ") },
-            { icon: <Quote className="w-3.5 h-3.5" />, action: () => insertMarkdown("> ") },
-            { icon: <Minus className="w-3.5 h-3.5" />, action: () => insertMarkdown("\n---\n") },
-            { icon: <Link2 className="w-3.5 h-3.5" />, action: () => insertMarkdown("[", "](URL)") },
-            { icon: <Variable className="w-3.5 h-3.5" />, action: () => insertMarkdown("{{", "}}") },
-          ].map((btn, i) => (
-            <button key={i} onClick={btn.action} className="p-2 text-[#d1d5db] hover:text-[#1a1a1a] rounded">
-              {btn.icon}
-            </button>
-          ))}
-          {/* Word count */}
-          <span className="ml-auto text-[9px] text-[#d1d5db] font-mono pr-2">{wordCount}字</span>
+        <div className="border-t border-[#f0f0f0]">
+          {/* Row 1: Quick symbols */}
+          <div className="flex items-center px-1 py-0.5 overflow-x-auto gap-0">
+            {["#", "*", "_", "+", "-", "`", "<", ">", "!", "[", "]", "(", ")", "|", "~", "{{"].map((char) => (
+              <button
+                key={char}
+                onClick={() => char === "{{" ? insertMarkdown("{{", "}}") : insertChar(char)}
+                className="min-w-[32px] h-8 flex items-center justify-center text-[13px] font-mono text-[#6b7280] hover:text-[#1a1a1a] hover:bg-[#f5f5f5] rounded"
+              >
+                {char}
+              </button>
+            ))}
+            <span className="ml-auto text-[9px] text-[#d1d5db] font-mono pr-2 whitespace-nowrap">{wordCount}字</span>
+          </div>
+          {/* Row 2: Semantic shortcuts */}
+          <div className="flex items-center px-1 py-0.5 overflow-x-auto gap-0 border-t border-[#f5f5f5]">
+            {[
+              { icon: <Heading1 className="w-3 h-3" />, action: () => insertMarkdown("# ") },
+              { icon: <Heading2 className="w-3 h-3" />, action: () => insertMarkdown("## ") },
+              { icon: <Bold className="w-3 h-3" />, action: () => insertMarkdown("**", "**") },
+              { icon: <Italic className="w-3 h-3" />, action: () => insertMarkdown("_", "_") },
+              { icon: <Code className="w-3 h-3" />, action: () => insertMarkdown("```\n", "\n```") },
+              { icon: <List className="w-3 h-3" />, action: () => insertMarkdown("- ") },
+              { icon: <Quote className="w-3 h-3" />, action: () => insertMarkdown("> ") },
+              { icon: <Link2 className="w-3 h-3" />, action: () => insertMarkdown("[", "](URL)") },
+              { icon: <Minus className="w-3 h-3" />, action: () => insertMarkdown("\n---\n") },
+            ].map((btn, i) => (
+              <button key={i} onClick={btn.action} className="p-1.5 text-[#d1d5db] hover:text-[#1a1a1a] rounded">
+                {btn.icon}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -494,18 +522,28 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
   const [scores, setScores] = useState<Record<string, { grade: string; feedback: string }>>({});
   const [overall, setOverall] = useState("");
   const [suggestion, setSuggestion] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const runReview = async () => {
     setState("loading");
     try {
-      const res = await fetch("/api/ai-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bodyMd }) });
-      if (!res.ok) throw new Error("Failed");
+      // Get user's API key from localStorage
+      const provider = typeof window !== "undefined" ? localStorage.getItem("promptnote_ai_provider") || "" : "";
+      const apiKey = typeof window !== "undefined" ? localStorage.getItem("promptnote_ai_apikey") || "" : "";
+      const res = await fetch("/api/ai-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bodyMd, provider, apiKey }) });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed");
+      }
       const data = await res.json();
       setScores(data.scores);
       setOverall(data.overall);
       setSuggestion(data.suggestionMd);
       setState("done");
-    } catch { setState("error"); }
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Review failed");
+      setState("error");
+    }
   };
 
   const gradeColor: Record<string, string> = { A: "text-[#1a1a1a]", B: "text-[#404040]", C: "text-[#4F46E5]", D: "text-red-500" };
@@ -556,7 +594,11 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
           </div>
         )}
         {state === "error" && (
-          <div className="text-center py-12 space-y-3"><p className="text-[#9ca3af] text-xs font-mono">Review failed</p><button onClick={runReview} className="text-[#4F46E5] text-xs font-medium">Retry</button></div>
+          <div className="text-center py-12 space-y-3">
+            <p className="text-[#9ca3af] text-xs font-mono">{errorMsg || "Review failed"}</p>
+            {errorMsg.includes("APIキー") && <p className="text-[10px] text-[#d1d5db]">Settings → AI Review でキーを設定してください</p>}
+            <button onClick={runReview} className="text-[#4F46E5] text-xs font-medium">Retry</button>
+          </div>
         )}
         <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
       </div>

@@ -3,12 +3,16 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User } from "lucide-react";
+import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, signOut, loading } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [exportDone, setExportDone] = useState(false);
+  const [aiProvider, setAiProvider] = useState<"openai" | "anthropic">("openai");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [keySaved, setKeySaved] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("promptnote_darkmode");
@@ -16,6 +20,11 @@ export default function SettingsPage() {
       setDarkMode(true);
       document.documentElement.classList.add("dark");
     }
+    // Load saved API key
+    const savedProvider = localStorage.getItem("promptnote_ai_provider") as "openai" | "anthropic" | null;
+    const savedKey = localStorage.getItem("promptnote_ai_apikey");
+    if (savedProvider) setAiProvider(savedProvider);
+    if (savedKey) setAiApiKey(savedKey);
   }, []);
 
   const toggleDark = () => {
@@ -102,21 +111,76 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* AI Review */}
+      {/* AI Review API Key */}
       <section className="mb-8">
         <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">AI Review</h2>
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
-          <div className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
-            <span className="text-sm text-[#1a1a1a] dark:text-white">Remaining</span>
-            <span className="text-sm text-[#9ca3af] font-mono">3 / 3</span>
-          </div>
-          <div className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
-            <div>
-              <span className="text-sm font-medium text-[#4F46E5]">Pro Plan</span>
-              <p className="text-[10px] text-[#9ca3af] font-mono">30/day + advanced review</p>
+          {/* Provider selector */}
+          <div className="flex items-center gap-2 py-3 border-b border-[#f0f0f0] dark:border-[#333]">
+            <Key className="w-4 h-4 text-[#9ca3af]" />
+            <span className="text-sm text-[#1a1a1a] dark:text-white">Provider</span>
+            <div className="ml-auto flex gap-1">
+              {(["openai", "anthropic"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setAiProvider(p)}
+                  className={`text-[10px] px-2.5 py-1 rounded font-mono ${
+                    aiProvider === p ? "bg-[#1a1a1a] text-white" : "bg-[#f5f5f5] text-[#9ca3af]"
+                  }`}
+                >
+                  {p === "openai" ? "OpenAI" : "Anthropic"}
+                </button>
+              ))}
             </div>
-            <span className="text-[10px] text-[#d1d5db] font-mono">Coming soon</span>
           </div>
+          {/* API Key input */}
+          <div className="py-3 border-b border-[#f0f0f0] dark:border-[#333]">
+            <div className="relative">
+              <input
+                type={showKey ? "text" : "password"}
+                value={aiApiKey}
+                onChange={(e) => setAiApiKey(e.target.value)}
+                placeholder={aiProvider === "openai" ? "sk-..." : "sk-ant-..."}
+                className="w-full pr-20 pl-3 py-2 border border-[#f0f0f0] rounded-lg text-xs font-mono outline-none focus:border-[#4F46E5] placeholder:text-[#e5e7eb]"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <button onClick={() => setShowKey(!showKey)} className="text-[#d1d5db] p-1">
+                  {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-[9px] text-[#d1d5db] font-mono">
+                {aiProvider === "openai" ? "platform.openai.com/api-keys" : "console.anthropic.com/keys"}
+              </p>
+              <button
+                onClick={() => {
+                  localStorage.setItem("promptnote_ai_provider", aiProvider);
+                  localStorage.setItem("promptnote_ai_apikey", aiApiKey);
+                  setKeySaved(true);
+                  setTimeout(() => setKeySaved(false), 1500);
+                }}
+                className="text-[10px] font-medium text-white bg-[#1a1a1a] px-3 py-1 rounded-full"
+              >
+                {keySaved ? "✓ Saved" : "Save Key"}
+              </button>
+            </div>
+            {aiApiKey && (
+              <button
+                onClick={() => {
+                  setAiApiKey("");
+                  localStorage.removeItem("promptnote_ai_apikey");
+                  localStorage.removeItem("promptnote_ai_provider");
+                }}
+                className="text-[10px] text-red-400 mt-2 font-mono"
+              >
+                Remove key
+              </button>
+            )}
+          </div>
+          <p className="text-[9px] text-[#d1d5db] py-2 leading-relaxed">
+            キーはブラウザのローカルストレージにのみ保存され、サーバーには保存しません。AI Reviewボタンを押した時だけAPIに送信されます。
+          </p>
         </div>
       </section>
 
