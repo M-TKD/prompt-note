@@ -3,14 +3,17 @@
 import { useState, useEffect, useRef, TouchEvent } from "react";
 import Link from "next/link";
 import { store } from "@/lib/store";
+import { useAuth } from "@/lib/auth-context";
 import { PromptDocument, TYPE_CONFIG, DocumentType } from "@/lib/types";
-import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check } from "lucide-react";
+import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check, ArrowRight } from "lucide-react";
 
 export default function HomePage() {
+  const { user, loading: authLoading } = useAuth();
   const [documents, setDocuments] = useState<PromptDocument[]>([]);
   const [filter, setFilter] = useState<DocumentType | "all">("all");
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [signupDismissed, setSignupDismissed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -140,6 +143,22 @@ export default function HomePage() {
                 <button onClick={() => { setShowOnboarding(false); localStorage.setItem("promptnote_onboarding_seen", "1"); }} className="text-[11px] text-[#d1d5db]">閉じる</button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sign up CTA (only when not logged in and not dismissed) */}
+      {!authLoading && !user && !signupDismissed && documents.length >= 1 && (
+        <div className="mb-6 p-4 bg-[#1a1a1a] rounded-xl">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="font-medium text-sm text-white">アカウントを作成しませんか？</p>
+              <p className="text-[11px] text-[#9ca3af] mt-0.5 leading-relaxed">データのバックアップやデバイス間の同期ができます</p>
+              <Link href="/auth" className="inline-flex items-center gap-1 mt-2.5 text-[11px] font-medium text-[#4F46E5] bg-white px-3 py-1.5 rounded-full">
+                Sign up free <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <button onClick={() => setSignupDismissed(true)} className="text-[#6b7280] text-xs ml-2">✕</button>
           </div>
         </div>
       )}
