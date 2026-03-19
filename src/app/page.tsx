@@ -136,7 +136,7 @@ export default function HomePage() {
               <HelpCircle className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-sm text-[#1a1a1a]">PromptNote へようこそ</p>
+              <p className="font-medium text-sm text-[#1a1a1a]">PromptNotes へようこそ</p>
               <p className="text-xs text-[#9ca3af] mt-0.5 leading-relaxed">メモを書いて、Promptに磨いて、AIに送る。</p>
               <div className="flex items-center gap-3 mt-3">
                 <Link href="/howto" className="text-[11px] font-medium text-[#4F46E5]">使い方を見る →</Link>

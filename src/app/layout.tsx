@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PromptNote",
+  title: "PromptNotes",
   description: "プロンプトを保存し、磨き、共有する",
   manifest: "/manifest.json",
 };

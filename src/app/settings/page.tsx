@@ -227,7 +227,7 @@ export default function SettingsPage() {
       </section>
 
       <p className="text-center text-[10px] text-[#d1d5db] mt-16 font-mono tracking-widest">
-        PromptNote
+        PromptNotes
       </p>
     </div>
   );

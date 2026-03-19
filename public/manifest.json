@@ -1,6 +1,6 @@
 {
-  "name": "PromptNote",
-  "short_name": "PromptNote",
+  "name": "PromptNotes",
+  "short_name": "PromptNotes",
   "description": "Write, refine, and share AI prompts",
   "start_url": "/",
   "display": "standalone",

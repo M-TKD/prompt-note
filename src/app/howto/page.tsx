@@ -88,7 +88,7 @@ export default function HowToPage() {
         <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">Concept</p>
         <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-xl p-5">
           <p className="text-sm text-[#404040] leading-relaxed mb-4">
-            PromptNote は「メモ帳」と「プロンプト管理」を1つにしたアプリです。
+            PromptNotes は「メモ帳」と「プロンプト管理」を1つにしたアプリです。
             普段はシンプルなメモ帳として使い、良いアイデアはPromptに昇格させてAIで磨き、共有する。
           </p>
           <div className="flex items-center justify-center gap-2 text-[11px] text-[#9ca3af] font-mono py-3">

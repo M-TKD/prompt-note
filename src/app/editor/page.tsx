@@ -148,7 +148,7 @@ function EditorContent() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: title || "PromptNote",
+          title: title || "PromptNotes",
           text: bodyMd,
         });
       } catch { /* user cancelled */ }
