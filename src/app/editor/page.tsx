@@ -179,38 +179,59 @@ function EditorContent() {
         </button>
       </div>
 
-      {/* Type & Visibility */}
-      {!isQuickMemo && (
-        <div className="px-4 py-2 flex items-center gap-2 border-b border-[#f0f0f0]">
-          <span className={`text-[10px] px-2 py-0.5 rounded font-mono tracking-wide ${
-            isNote ? "bg-[#f5f5f5] text-[#9ca3af]" :
-            isPrompt ? "bg-[#EEF2FF] text-[#4F46E5]" : "bg-[#f5f5f5] text-[#6b7280]"
-          }`}>
-            {TYPE_CONFIG[docType].label}
-          </span>
-          {!isNote && (
-            <button
-              onClick={() => setVisibility(visibility === "public" ? "private" : "public")}
-              className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-mono ${
-                visibility === "public" ? "bg-[#EEF2FF] text-[#4F46E5]" : "bg-[#f5f5f5] text-[#9ca3af]"
-              }`}
-            >
-              {visibility === "public" ? <Globe className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
-              {visibility === "public" ? "public" : "private"}
-            </button>
-          )}
-          {/* Variable count badge */}
-          {variables.length > 0 && (
-            <button
-              onClick={() => setShowVariables(true)}
-              className="text-[10px] px-2 py-0.5 rounded bg-[#EEF2FF] text-[#4F46E5] flex items-center gap-1 font-mono ml-auto"
-            >
-              <Variable className="w-2.5 h-2.5" />
-              {variables.length} vars
-            </button>
-          )}
-        </div>
-      )}
+      {/* Type & Visibility & Promote */}
+      <div className="px-4 py-2 flex items-center gap-2 border-b border-[#f0f0f0]">
+        <span className={`text-[10px] px-2 py-0.5 rounded font-mono tracking-wide ${
+          isNote ? "bg-[#f5f5f5] text-[#9ca3af]" :
+          isPrompt ? "bg-[#EEF2FF] text-[#4F46E5]" : "bg-[#f5f5f5] text-[#6b7280]"
+        }`}>
+          {TYPE_CONFIG[docType].label}
+        </span>
+        {!isNote && (
+          <button
+            onClick={() => setVisibility(visibility === "public" ? "private" : "public")}
+            className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-mono ${
+              visibility === "public" ? "bg-[#EEF2FF] text-[#4F46E5]" : "bg-[#f5f5f5] text-[#9ca3af]"
+            }`}
+          >
+            {visibility === "public" ? <Globe className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
+            {visibility === "public" ? "public" : "private"}
+          </button>
+        )}
+        {/* Variable count badge */}
+        {variables.length > 0 && (
+          <button
+            onClick={() => setShowVariables(true)}
+            className="text-[10px] px-2 py-0.5 rounded bg-[#EEF2FF] text-[#4F46E5] flex items-center gap-1 font-mono"
+          >
+            <Variable className="w-2.5 h-2.5" />
+            {variables.length} vars
+          </button>
+        )}
+
+        <div className="flex-1" />
+
+        {/* Promote — prominent position */}
+        {isNote && hasContent && (
+          <button
+            onClick={() => setShowPromote(true)}
+            className="text-[11px] flex items-center gap-1.5 bg-[#4F46E5] text-white px-3 py-1 rounded-full font-medium"
+          >
+            <ArrowUpCircle className="w-3 h-3" />
+            Promote
+          </button>
+        )}
+        {/* Send to AI — prominent position */}
+        {(isPrompt || isTemplate) && hasContent && (
+          <button
+            onClick={() => setShowSendToAI(true)}
+            className="text-[11px] flex items-center gap-1.5 bg-[#1a1a1a] text-white px-3 py-1 rounded-full font-medium"
+          >
+            <Send className="w-3 h-3" />
+            Send to AI
+          </button>
+        )}
+      </div>
 
       {/* Title */}
       {!isQuickMemo && (
@@ -297,19 +318,11 @@ function EditorContent() {
 
         <div className="flex-1" />
 
-        {/* Note → Prompt promotion */}
-        {isNote && hasContent && (
-          <button onClick={() => setShowPromote(true)} className="text-[11px] flex items-center gap-1 text-[#4F46E5] font-medium">
-            <ArrowUpCircle className="w-3 h-3" />
-            Promote
-          </button>
-        )}
-
         {/* AI Review */}
         {hasContent && (
           <button onClick={() => setShowAIReview(true)} className="text-[11px] flex items-center gap-1 text-[#6b7280] font-mono">
             <WandSparkles className="w-3 h-3" />
-            AI
+            AI Review
           </button>
         )}
 
@@ -324,14 +337,6 @@ function EditorContent() {
         {hasContent && (
           <button onClick={handleExport} className="text-[#9ca3af] hover:text-[#6b7280]">
             <Download className="w-3.5 h-3.5" />
-          </button>
-        )}
-
-        {/* Send to AI */}
-        {(isPrompt || isTemplate) && hasContent && (
-          <button onClick={() => setShowSendToAI(true)} className="text-[11px] flex items-center gap-1.5 bg-[#1a1a1a] text-white px-3 py-1.5 rounded-full font-medium">
-            <Send className="w-3 h-3" />
-            AI
           </button>
         )}
 
