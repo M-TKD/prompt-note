@@ -43,6 +43,18 @@ body {
 
 textarea:focus { outline: none; }
 
+/* Dark mode */
+.dark body { background: #0a0a0a; color: #e5e7eb; }
+.dark .bg-white { background: #0a0a0a; }
+.dark .bg-\[\#fafafa\] { background: #141414; }
+.dark .bg-\[\#f5f5f5\] { background: #1a1a1a; }
+.dark .border-\[\#f0f0f0\] { border-color: #262626; }
+.dark .text-\[\#1a1a1a\] { color: #e5e7eb; }
+.dark .text-\[\#404040\] { color: #9ca3af; }
+.dark .markdown-preview h1, .dark .markdown-preview h2, .dark .markdown-preview h3 { color: #e5e7eb; }
+.dark .markdown-preview p, .dark .markdown-preview li { color: #9ca3af; }
+.dark .markdown-preview code { background: #1a1a1a; color: #e5e7eb; }
+
 /* Disable all transitions for clean feel */
 * { transition: none !important; }
 button:active { opacity: 0.7; }

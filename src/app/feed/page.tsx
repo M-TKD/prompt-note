@@ -15,6 +15,7 @@ export default function FeedPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
+    store.ensureSeedData();
     setDocs(store.getPublicDocuments(sort, category));
   }, [sort, category]);
 

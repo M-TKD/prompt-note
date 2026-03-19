@@ -1,9 +1,8 @@
-// Simple local storage-based store for MVP (no Supabase needed to start)
-// This lets the app work immediately without any backend setup
-
-import { PromptDocument } from "./types";
+import { PromptDocument, SAMPLE_PROMPTS } from "./types";
 
 const STORAGE_KEY = "promptnote_documents";
+const SEED_KEY = "promptnote_seeded";
+const DRAFT_KEY = "promptnote_draft";
 
 function getAll(): PromptDocument[] {
   if (typeof window === "undefined") return [];
@@ -16,10 +15,24 @@ function saveAll(docs: PromptDocument[]) {
 }
 
 export const store = {
+  ensureSeedData() {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem(SEED_KEY)) return;
+    const existing = getAll();
+    const samples: PromptDocument[] = SAMPLE_PROMPTS.map((s, i) => ({
+      ...s,
+      id: `sample-${i}-${Date.now()}`,
+      createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - i * 3600000).toISOString(),
+    }));
+    saveAll([...existing, ...samples]);
+    localStorage.setItem(SEED_KEY, new Date().toISOString());
+  },
+
   getDocuments(): PromptDocument[] {
-    return getAll().sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    );
+    return getAll()
+      .filter(d => d.userId !== "sample")
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   },
 
   getDocument(id: string): PromptDocument | undefined {
@@ -43,10 +56,9 @@ export const store = {
     const q = query.toLowerCase();
     return getAll().filter(
       (d) =>
-        (d.visibility === "public" || true) && // search own docs too
-        (d.title?.toLowerCase().includes(q) ||
-          d.bodyMd.toLowerCase().includes(q) ||
-          d.tags.some((t) => t.toLowerCase().includes(q)))
+        d.title?.toLowerCase().includes(q) ||
+        d.bodyMd.toLowerCase().includes(q) ||
+        d.tags.some((t) => t.toLowerCase().includes(q))
     );
   },
 
@@ -82,25 +94,61 @@ export const store = {
   },
 
   toggleLike(id: string) {
+    const likedKey = `promptnote_liked_${id}`;
     const docs = getAll();
     const doc = docs.find((d) => d.id === id);
     if (doc) {
-      doc.likeCount = (doc.likeCount || 0) + 1;
+      const alreadyLiked = localStorage.getItem(likedKey);
+      if (alreadyLiked) {
+        doc.likeCount = Math.max(0, (doc.likeCount || 0) - 1);
+        localStorage.removeItem(likedKey);
+      } else {
+        doc.likeCount = (doc.likeCount || 0) + 1;
+        localStorage.setItem(likedKey, "1");
+      }
       saveAll(docs);
     }
   },
 
+  isLiked(id: string): boolean {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem(`promptnote_liked_${id}`);
+  },
+
   fork(id: string): PromptDocument | undefined {
-    const original = getAll().find((d) => d.id === id);
+    const docs = getAll();
+    const original = docs.find((d) => d.id === id);
     if (!original) return undefined;
+    original.forkCount = (original.forkCount || 0) + 1;
+    saveAll(docs);
     return this.create({
       userId: "local",
-      title: original.title ? `${original.title} (フォーク)` : null,
+      title: original.title ? `${original.title} (fork)` : null,
       bodyMd: original.bodyMd,
       type: original.type,
       visibility: "private",
       tags: [...original.tags],
       forkedFromId: original.id,
     });
+  },
+
+  saveDraft(data: { title: string; bodyMd: string; type: string; tags: string[] }) {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...data, savedAt: Date.now() }));
+  },
+
+  getDraft(): { title: string; bodyMd: string; type: string; tags: string[]; savedAt: number } | null {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    if (Date.now() - draft.savedAt > 86400000) {
+      localStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+    return draft;
+  },
+
+  clearDraft() {
+    localStorage.removeItem(DRAFT_KEY);
   },
 };
