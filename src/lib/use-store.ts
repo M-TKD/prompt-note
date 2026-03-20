@@ -3,6 +3,7 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useAuth } from "./auth-context";
 import { createHybridStore } from "./hybrid-store";
+import { cloudStore } from "./cloud-store";
 
 /**
  * useStore hook
@@ -12,21 +13,31 @@ import { createHybridStore } from "./hybrid-store";
 export function useStore() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
-  const migrated = useRef(false);
+  const initialized = useRef(false);
 
   const hybridStore = useMemo(() => createHybridStore(userId), [userId]);
 
-  // ログイン時に自動移行
+  // ログイン時: プロフィール確保 + データ移行
   useEffect(() => {
-    if (userId && !migrated.current) {
-      migrated.current = true;
+    if (userId && !initialized.current) {
+      initialized.current = true;
+
+      // プロフィールが存在しない場合は作成
+      const meta = user?.user_metadata;
+      cloudStore.ensureProfile(
+        userId,
+        meta?.full_name || meta?.name || user?.email?.split("@")[0],
+        meta?.avatar_url || meta?.picture
+      );
+
+      // localStorageのデータをクラウドに移行
       hybridStore.migrateLocalData().then((count) => {
         if (count > 0) {
           console.log(`Migrated ${count} documents to cloud`);
         }
       });
     }
-  }, [userId, hybridStore]);
+  }, [userId, user, hybridStore]);
 
   return hybridStore;
 }

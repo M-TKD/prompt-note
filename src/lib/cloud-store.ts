@@ -18,12 +18,6 @@ function toDocument(row: Record<string, unknown>): PromptDocument {
     updatedAt: row.updated_at as string,
     forkedFromId: row.forked_from_id as string | undefined,
     variables: row.variables as TemplateVariable[] | undefined,
-    author: row.profiles
-      ? {
-          name: (row.profiles as Record<string, unknown>).display_name as string,
-          avatarUrl: (row.profiles as Record<string, unknown>).avatar_url as string | undefined,
-        }
-      : undefined,
   };
 }
 
@@ -34,12 +28,12 @@ export const cloudStore = {
   async getDocuments(userId: string): Promise<PromptDocument[]> {
     const { data, error } = await supabase
       .from("documents")
-      .select("*, profiles!documents_user_id_fkey(display_name, avatar_url)")
+      .select("*")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
     if (error) {
-      console.error("getDocuments error:", error);
+      console.error("getDocuments error:", JSON.stringify(error));
       return [];
     }
     return (data || []).map(toDocument);
@@ -51,7 +45,7 @@ export const cloudStore = {
   async getDocument(id: string): Promise<PromptDocument | null> {
     const { data, error } = await supabase
       .from("documents")
-      .select("*, profiles!documents_user_id_fkey(display_name, avatar_url)")
+      .select("*")
       .eq("id", id)
       .single();
 
@@ -68,7 +62,7 @@ export const cloudStore = {
   ): Promise<PromptDocument[]> {
     let query = supabase
       .from("documents")
-      .select("*, profiles!documents_user_id_fkey(display_name, avatar_url)")
+      .select("*")
       .eq("visibility", "public")
       .neq("type", "note");
 
@@ -86,7 +80,7 @@ export const cloudStore = {
 
     const { data, error } = await query;
     if (error) {
-      console.error("getPublicDocuments error:", error);
+      console.error("getPublicDocuments error:", JSON.stringify(error));
       return [];
     }
     return (data || []).map(toDocument);
@@ -99,7 +93,7 @@ export const cloudStore = {
     const q = `%${query}%`;
     let dbQuery = supabase
       .from("documents")
-      .select("*, profiles!documents_user_id_fkey(display_name, avatar_url)")
+      .select("*")
       .or(`title.ilike.${q},body_md.ilike.${q}`);
 
     // ログイン中: 自分のドキュメント + 公開ドキュメント
@@ -113,7 +107,7 @@ export const cloudStore = {
 
     const { data, error } = await dbQuery;
     if (error) {
-      console.error("search error:", error);
+      console.error("search error:", JSON.stringify(error));
       return [];
     }
     return (data || []).map(toDocument);
@@ -137,11 +131,11 @@ export const cloudStore = {
         forked_from_id: doc.forkedFromId || null,
         variables: doc.variables || null,
       })
-      .select("*, profiles!documents_user_id_fkey(display_name, avatar_url)")
+      .select("*")
       .single();
 
     if (error) {
-      console.error("create error:", error);
+      console.error("create error:", JSON.stringify(error));
       return null;
     }
     return toDocument(data);
@@ -168,11 +162,11 @@ export const cloudStore = {
       .from("documents")
       .update(dbUpdates)
       .eq("id", id)
-      .select("*, profiles!documents_user_id_fkey(display_name, avatar_url)")
+      .select("*")
       .single();
 
     if (error) {
-      console.error("update error:", error);
+      console.error("update error:", JSON.stringify(error));
       return null;
     }
     return toDocument(data);
@@ -184,7 +178,7 @@ export const cloudStore = {
   async delete(id: string): Promise<boolean> {
     const { error } = await supabase.from("documents").delete().eq("id", id);
     if (error) {
-      console.error("delete error:", error);
+      console.error("delete error:", JSON.stringify(error));
       return false;
     }
     return true;
@@ -308,6 +302,27 @@ export const cloudStore = {
 
     localStorage.setItem(MIGRATED_KEY, new Date().toISOString());
     return migrated;
+  },
+
+  // -----------------------------------------------
+  // プロフィール確保（なければ作成）
+  // -----------------------------------------------
+  async ensureProfile(userId: string, name?: string, avatarUrl?: string) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (!data) {
+      // プロフィールが無い（既存ユーザー）→ 作成
+      await supabase.from("profiles").insert({
+        id: userId,
+        display_name: name || "User",
+        avatar_url: avatarUrl || null,
+      });
+    }
+    return data;
   },
 
   // -----------------------------------------------
