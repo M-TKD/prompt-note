@@ -80,27 +80,27 @@ export default function HowToPage() {
         <button onClick={() => router.back()} className="text-[#9ca3af]">
           <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
         </button>
-        <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a]">How it works</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">How it works</h1>
       </div>
 
       {/* Concept */}
       <section className="mb-12">
         <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">Concept</p>
-        <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-xl p-5">
-          <p className="text-sm text-[#404040] leading-relaxed mb-4">
+        <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-xl p-5">
+          <p className="text-sm text-[#404040] dark:text-[#e5e7eb] leading-relaxed mb-4">
             PromptNotes は「メモ帳」と「プロンプト管理」を1つにしたアプリです。
             普段はシンプルなメモ帳として使い、良いアイデアはPromptに昇格させてAIで磨き、共有する。
           </p>
           <div className="flex items-center justify-center gap-2 text-[11px] text-[#9ca3af] font-mono py-3">
-            <span className="px-2 py-1 bg-white border border-[#f0f0f0] rounded">書く</span>
+            <span className="px-2 py-1 bg-white dark:bg-[#333] border border-[#f0f0f0] dark:border-[#444] rounded">書く</span>
             <span>→</span>
-            <span className="px-2 py-1 bg-white border border-[#4F46E5]/20 rounded text-[#4F46E5]">Boost</span>
+            <span className="px-2 py-1 bg-white dark:bg-[#333] border border-[#4F46E5]/20 rounded text-[#4F46E5]">Boost</span>
             <span>→</span>
-            <span className="px-2 py-1 bg-white border border-[#f0f0f0] rounded">磨く</span>
+            <span className="px-2 py-1 bg-white dark:bg-[#333] border border-[#f0f0f0] dark:border-[#444] rounded">磨く</span>
             <span>→</span>
-            <span className="px-2 py-1 bg-white border border-[#f0f0f0] rounded">使う</span>
+            <span className="px-2 py-1 bg-white dark:bg-[#333] border border-[#f0f0f0] dark:border-[#444] rounded">使う</span>
             <span>→</span>
-            <span className="px-2 py-1 bg-white border border-[#f0f0f0] rounded">共有</span>
+            <span className="px-2 py-1 bg-white dark:bg-[#333] border border-[#f0f0f0] dark:border-[#444] rounded">共有</span>
           </div>
         </div>
       </section>
@@ -110,10 +110,10 @@ export default function HowToPage() {
         <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">3 types</p>
         <div className="space-y-2">
           {CONCEPTS.map((c) => (
-            <div key={c.title} className="flex items-start gap-3 py-3 border-b border-[#f0f0f0] last:border-0">
+            <div key={c.title} className="flex items-start gap-3 py-3 border-b border-[#f0f0f0] dark:border-[#333] last:border-0">
               <div className={`w-0.5 h-8 rounded-full mt-0.5 shrink-0 ${c.indicator}`} />
               <div>
-                <p className="font-medium text-sm text-[#1a1a1a]">{c.title}</p>
+                <p className="font-medium text-sm text-[#1a1a1a] dark:text-white">{c.title}</p>
                 <p className="text-xs text-[#9ca3af] mt-0.5">{c.description}</p>
               </div>
             </div>
@@ -129,15 +129,15 @@ export default function HowToPage() {
             <div key={step.number} className="flex gap-4 pb-8 last:pb-0">
               <div className="flex flex-col items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                  step.accent ? "bg-[#4F46E5] text-white" : "bg-[#f5f5f5] text-[#6b7280]"
+                  step.accent ? "bg-[#4F46E5] text-white" : "bg-[#f5f5f5] dark:bg-[#333] text-[#6b7280]"
                 }`}>
                   {step.icon}
                 </div>
-                {i < STEPS.length - 1 && <div className="w-px flex-1 bg-[#f0f0f0] mt-2" />}
+                {i < STEPS.length - 1 && <div className="w-px flex-1 bg-[#f0f0f0] dark:bg-[#333] mt-2" />}
               </div>
               <div className="pt-1">
                 <p className="text-[10px] font-mono text-[#d1d5db] mb-0.5">{step.number}</p>
-                <p className="font-medium text-sm text-[#1a1a1a] mb-1">{step.title}</p>
+                <p className="font-medium text-sm text-[#1a1a1a] dark:text-white mb-1">{step.title}</p>
                 <p className="text-xs text-[#9ca3af] leading-relaxed">{step.description}</p>
               </div>
             </div>
@@ -150,10 +150,10 @@ export default function HowToPage() {
         <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">Features</p>
         <div className="grid grid-cols-2 gap-2">
           {FEATURES.map((f) => (
-            <div key={f.title} className="bg-[#fafafa] border border-[#f0f0f0] rounded-lg p-3">
+            <div key={f.title} className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[#6b7280]">{f.icon}</span>
-                <p className="font-medium text-xs text-[#1a1a1a]">{f.title}</p>
+                <p className="font-medium text-xs text-[#1a1a1a] dark:text-white">{f.title}</p>
               </div>
               <p className="text-[10px] text-[#9ca3af] leading-relaxed">{f.desc}</p>
             </div>
@@ -165,33 +165,33 @@ export default function HowToPage() {
       <section className="mb-8">
         <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">Tips</p>
         <div className="space-y-3">
-          <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-lg p-4">
+          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
             <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a]">メモ帳としても使えます</span>
+              <span className="font-medium text-[#1a1a1a] dark:text-white">メモ帳としても使えます</span>
               — すべてをPromptにする必要はありません。普段のメモ帳として使って、良いアイデアだけBoostしましょう。
             </p>
           </div>
-          <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-lg p-4">
+          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
             <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a]">記号バーで素早く入力</span>
+              <span className="font-medium text-[#1a1a1a] dark:text-white">記号バーで素早く入力</span>
               {"— キーボードの上に # * _ ` < > などの記号バーがあります。Markdownの記号を1タップで入力できます。"}
             </p>
           </div>
-          <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-lg p-4">
+          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
             <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a]">{"テンプレート変数 {{変数}}"}</span>
+              <span className="font-medium text-[#1a1a1a] dark:text-white">{"テンプレート変数 {{変数}}"}</span>
               {"— テンプレートに {{名前}} のような変数を入れると、使う時に一括で埋められます。"}
             </p>
           </div>
-          <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-lg p-4">
+          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
             <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a]">スワイプで操作</span>
+              <span className="font-medium text-[#1a1a1a] dark:text-white">スワイプで操作</span>
               — リスト上で左にスワイプすると、ピン留め・コピー・削除のアクションが出ます。
             </p>
           </div>
-          <div className="bg-[#fafafa] border border-[#f0f0f0] rounded-lg p-4">
+          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
             <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a]">AI Review を使うには</span>
+              <span className="font-medium text-[#1a1a1a] dark:text-white">AI Review を使うには</span>
               — Settings → AI Review で OpenAI または Anthropic の APIキーを入力してください。キーはブラウザにのみ保存されます。
             </p>
           </div>
@@ -201,7 +201,7 @@ export default function HowToPage() {
       {/* CTA */}
       <button
         onClick={() => router.push("/editor?mode=quick")}
-        className="w-full py-3 bg-[#1a1a1a] text-white font-medium rounded-xl text-sm"
+        className="w-full py-3 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-sm"
       >
         最初のメモを書く
       </button>

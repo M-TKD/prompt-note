@@ -16,7 +16,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1a1a1a] border-t border-[#f0f0f0] dark:border-[#333] z-50">
       <div className="max-w-lg mx-auto flex items-center justify-around py-1.5">
         {tabs.map((tab) => {
           const isActive = tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
@@ -29,8 +29,8 @@ export function BottomNav() {
                 href="/editor?mode=quick"
                 className="flex items-center justify-center -mt-5"
               >
-                <div className="w-11 h-11 rounded-full bg-[#1a1a1a] flex items-center justify-center shadow-sm">
-                  <Plus className="w-5 h-5 text-white" strokeWidth={2} />
+                <div className="w-11 h-11 rounded-full bg-[#1a1a1a] dark:bg-white flex items-center justify-center shadow-sm">
+                  <Plus className="w-5 h-5 text-white dark:text-[#1a1a1a]" strokeWidth={2} />
                 </div>
               </Link>
             );
@@ -41,7 +41,7 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={`flex flex-col items-center py-1.5 px-3 ${
-                isActive ? "text-[#1a1a1a]" : "text-[#d1d5db]"
+                isActive ? "text-[#1a1a1a] dark:text-white" : "text-[#d1d5db] dark:text-[#6b7280]"
               }`}
             >
               <Icon className="w-[18px] h-[18px]" strokeWidth={isActive ? 2 : 1.5} />

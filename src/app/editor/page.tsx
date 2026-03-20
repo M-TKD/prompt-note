@@ -72,6 +72,17 @@ function EditorContent() {
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [title, bodyMd, docType, tags, editId]);
 
+  // Warn about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (bodyMd.trim() && !saved) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [bodyMd, saved]);
+
   const isQuickMemo = docType === "note" && !editId;
   const isNote = docType === "note";
   const isPrompt = docType === "prompt";
@@ -169,10 +180,10 @@ function EditorContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-white dark:bg-[#1a1a1a]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0]">
-        <button onClick={() => router.back()} className="text-[#9ca3af] hover:text-[#1a1a1a]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] dark:border-[#333]">
+        <button onClick={() => router.back()} className="text-[#9ca3af] hover:text-[#1a1a1a] dark:hover:text-white">
           <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
         </button>
         <div className="flex items-center gap-2">
@@ -187,7 +198,7 @@ function EditorContent() {
           onClick={handleSave}
           disabled={!hasContent}
           className={`text-xs font-medium px-4 py-1.5 rounded-full ${
-            hasContent ? "bg-[#1a1a1a] text-white" : "bg-[#f5f5f5] text-[#d1d5db]"
+            hasContent ? "bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a]" : "bg-[#f5f5f5] dark:bg-[#333] text-[#d1d5db]"
           }`}
         >
           {saved ? "✓" : "Save"}
@@ -195,10 +206,10 @@ function EditorContent() {
       </div>
 
       {/* Type & Visibility & Promote */}
-      <div className="px-4 py-2 flex items-center gap-2 border-b border-[#f0f0f0]">
+      <div className="px-4 py-2 flex items-center gap-2 border-b border-[#f0f0f0] dark:border-[#333]">
         <span className={`text-[10px] px-2 py-0.5 rounded font-mono tracking-wide ${
-          isNote ? "bg-[#f5f5f5] text-[#9ca3af]" :
-          isPrompt ? "bg-[#EEF2FF] text-[#4F46E5]" : "bg-[#f5f5f5] text-[#6b7280]"
+          isNote ? "bg-[#f5f5f5] dark:bg-[#333] text-[#9ca3af]" :
+          isPrompt ? "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]" : "bg-[#f5f5f5] dark:bg-[#333] text-[#6b7280]"
         }`}>
           {TYPE_CONFIG[docType].label}
         </span>
@@ -206,7 +217,7 @@ function EditorContent() {
           <button
             onClick={() => setVisibility(visibility === "public" ? "private" : "public")}
             className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-mono ${
-              visibility === "public" ? "bg-[#EEF2FF] text-[#4F46E5]" : "bg-[#f5f5f5] text-[#9ca3af]"
+              visibility === "public" ? "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]" : "bg-[#f5f5f5] dark:bg-[#333] text-[#9ca3af]"
             }`}
           >
             {visibility === "public" ? <Globe className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
@@ -217,7 +228,7 @@ function EditorContent() {
         {variables.length > 0 && (
           <button
             onClick={() => setShowVariables(true)}
-            className="text-[10px] px-2 py-0.5 rounded bg-[#EEF2FF] text-[#4F46E5] flex items-center gap-1 font-mono"
+            className="text-[10px] px-2 py-0.5 rounded bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5] flex items-center gap-1 font-mono"
           >
             <Variable className="w-2.5 h-2.5" />
             {variables.length} vars
@@ -240,7 +251,7 @@ function EditorContent() {
         {(isPrompt || isTemplate) && hasContent && (
           <button
             onClick={() => setShowSendToAI(true)}
-            className="text-[11px] flex items-center gap-1.5 bg-[#1a1a1a] text-white px-3 py-1 rounded-full font-medium"
+            className="text-[11px] flex items-center gap-1.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] px-3 py-1 rounded-full font-medium"
           >
             <Send className="w-3 h-3" />
             Send to AI
@@ -255,15 +266,15 @@ function EditorContent() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title"
-          className="px-6 py-3 text-lg font-bold outline-none placeholder:text-[#e5e7eb] tracking-tight text-[#1a1a1a]"
+          className="px-6 py-3 text-lg font-bold outline-none placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] tracking-tight text-[#1a1a1a] dark:text-white bg-transparent"
         />
       )}
 
       {/* Tags */}
       {!isQuickMemo && (
-        <div className="px-6 py-1.5 flex items-center gap-1.5 flex-wrap border-b border-[#f0f0f0]">
+        <div className="px-6 py-1.5 flex items-center gap-1.5 flex-wrap border-b border-[#f0f0f0] dark:border-[#333]">
           {tags.map((tag) => (
-            <span key={tag} className="text-[10px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#f5f5f5] flex items-center gap-1 font-mono">
+            <span key={tag} className="text-[10px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#f5f5f5] dark:bg-[#333] flex items-center gap-1 font-mono">
               #{tag}
               <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="text-[#d1d5db] hover:text-[#6b7280]">✕</button>
             </span>
@@ -274,7 +285,7 @@ function EditorContent() {
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); handleAddTag(); } }}
             placeholder="tag..."
-            className="text-[10px] outline-none min-w-[60px] flex-1 text-[#9ca3af] placeholder:text-[#e5e7eb] font-mono"
+            className="text-[10px] outline-none min-w-[60px] flex-1 text-[#9ca3af] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent font-mono"
           />
         </div>
       )}
@@ -291,7 +302,7 @@ function EditorContent() {
             value={bodyMd}
             onChange={(e) => setBodyMd(e.target.value)}
             placeholder={isQuickMemo ? "Write something..." : "Write in Markdown...\n\nUse {{variable}} for template variables"}
-            className="w-full h-full p-6 outline-none resize-none font-mono text-sm leading-relaxed text-[#404040] placeholder:text-[#e5e7eb]"
+            className="w-full h-full p-6 outline-none resize-none font-mono text-sm leading-relaxed text-[#404040] dark:text-[#e5e7eb] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent"
             autoFocus
           />
         )}
@@ -299,14 +310,14 @@ function EditorContent() {
 
       {/* Symbol shortcut bar (Type-style) */}
       {!showPreview && (
-        <div className="border-t border-[#f0f0f0]">
+        <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           {/* Row 1: Quick symbols */}
           <div className="flex items-center px-1 py-0.5 overflow-x-auto gap-0">
             {["#", "*", "_", "+", "-", "`", "<", ">", "!", "[", "]", "(", ")", "|", "~", "{{"].map((char) => (
               <button
                 key={char}
                 onClick={() => char === "{{" ? insertMarkdown("{{", "}}") : insertChar(char)}
-                className="min-w-[32px] h-8 flex items-center justify-center text-[13px] font-mono text-[#6b7280] hover:text-[#1a1a1a] hover:bg-[#f5f5f5] rounded"
+                className="min-w-[32px] h-8 flex items-center justify-center text-[13px] font-mono text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#333] rounded"
               >
                 {char}
               </button>
@@ -314,7 +325,7 @@ function EditorContent() {
             <span className="ml-auto text-[9px] text-[#d1d5db] font-mono pr-2 whitespace-nowrap">{wordCount}字</span>
           </div>
           {/* Row 2: Semantic shortcuts */}
-          <div className="flex items-center px-1 py-0.5 overflow-x-auto gap-0 border-t border-[#f5f5f5]">
+          <div className="flex items-center px-1 py-0.5 overflow-x-auto gap-0 border-t border-[#f5f5f5] dark:border-[#333]">
             {[
               { icon: <Heading1 className="w-3 h-3" />, action: () => insertMarkdown("# ") },
               { icon: <Heading2 className="w-3 h-3" />, action: () => insertMarkdown("## ") },
@@ -326,7 +337,7 @@ function EditorContent() {
               { icon: <Link2 className="w-3 h-3" />, action: () => insertMarkdown("[", "](URL)") },
               { icon: <Minus className="w-3 h-3" />, action: () => insertMarkdown("\n---\n") },
             ].map((btn, i) => (
-              <button key={i} onClick={btn.action} className="p-1.5 text-[#d1d5db] hover:text-[#1a1a1a] rounded">
+              <button key={i} onClick={btn.action} className="p-1.5 text-[#d1d5db] dark:text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white rounded">
                 {btn.icon}
               </button>
             ))}
@@ -335,7 +346,7 @@ function EditorContent() {
       )}
 
       {/* Bottom action bar */}
-      <div className="flex items-center gap-2.5 px-4 py-2 border-t border-[#f0f0f0]">
+      <div className="flex items-center gap-2.5 px-4 py-2 border-t border-[#f0f0f0] dark:border-[#333]">
         <button
           onClick={() => setShowPreview(!showPreview)}
           className="text-[11px] flex items-center gap-1 text-[#9ca3af] font-mono"
@@ -398,9 +409,9 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
 
   return (
     <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
-      <div className="bg-white w-full max-w-lg rounded-t-2xl p-6 space-y-3 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="w-8 h-0.5 bg-[#e5e7eb] rounded-full mx-auto mb-2" />
-        <h2 className="font-bold text-base text-center tracking-tight">Template Variables</h2>
+      <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 space-y-3 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
+        <h2 className="font-bold text-base text-center tracking-tight dark:text-white">Template Variables</h2>
         <p className="text-[11px] text-[#9ca3af] text-center font-mono">Fill in values to generate prompt</p>
 
         <div className="space-y-3 mt-4">
@@ -412,7 +423,7 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
                 value={values[v.name] || ""}
                 onChange={(e) => setValues({ ...values, [v.name]: e.target.value })}
                 placeholder={v.name}
-                className="w-full px-3 py-2 border border-[#f0f0f0] rounded-lg text-sm outline-none focus:border-[#4F46E5] font-mono"
+                className="w-full px-3 py-2 border border-[#f0f0f0] dark:border-[#333] rounded-lg text-sm outline-none focus:border-[#4F46E5] dark:bg-[#222] dark:text-white font-mono"
               />
             </div>
           ))}
@@ -424,13 +435,13 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
               const filled = fillTemplate(bodyMd, values);
               navigator.clipboard.writeText(filled);
             }}
-            className="flex-1 py-2.5 border border-[#f0f0f0] text-[#6b7280] font-medium rounded-xl text-xs"
+            className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs"
           >
             Copy filled
           </button>
           <button
             onClick={() => onFill(fillTemplate(bodyMd, values))}
-            className="flex-1 py-2.5 bg-[#1a1a1a] text-white font-medium rounded-xl text-xs"
+            className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-xs"
           >
             Apply
           </button>
@@ -445,22 +456,22 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
 function PromoteSheet({ onPromote, onSendToAI, onClose }: { onPromote: (t: DocumentType) => void; onSendToAI: () => void; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
-      <div className="bg-white w-full max-w-lg rounded-t-2xl p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
-        <div className="w-8 h-0.5 bg-[#e5e7eb] rounded-full mx-auto mb-2" />
-        <h2 className="font-bold text-base text-center tracking-tight">Boost</h2>
+      <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
+        <h2 className="font-bold text-base text-center tracking-tight dark:text-white">Boost</h2>
         <p className="text-[11px] text-[#9ca3af] text-center font-mono">メモをPromptに昇格 → AI添削・共有・送信</p>
-        <button onClick={() => onPromote("prompt")} className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#f0f0f0] hover:border-[#4F46E5]/30 hover:bg-[#EEF2FF]/20">
-          <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center"><WandSparkles className="w-4 h-4 text-[#4F46E5]" /></div>
-          <div className="text-left flex-1"><p className="font-medium text-sm">Prompt</p><p className="text-[10px] text-[#9ca3af] font-mono">Save as AI instruction</p></div>
+        <button onClick={() => onPromote("prompt")} className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#4F46E5]/30 hover:bg-[#EEF2FF]/20 dark:hover:bg-[#222]">
+          <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center"><WandSparkles className="w-4 h-4 text-[#4F46E5]" /></div>
+          <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">Prompt</p><p className="text-[10px] text-[#9ca3af] font-mono">Save as AI instruction</p></div>
           <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
         </button>
-        <button onClick={() => onPromote("template")} className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#f0f0f0] hover:border-[#9ca3af]/30">
-          <div className="w-9 h-9 rounded-lg bg-[#f5f5f5] flex items-center justify-center"><Copy className="w-4 h-4 text-[#6b7280]" /></div>
-          <div className="text-left flex-1"><p className="font-medium text-sm">Template</p><p className="text-[10px] text-[#9ca3af] font-mono">{"Reusable with {{variables}}"}</p></div>
+        <button onClick={() => onPromote("template")} className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#9ca3af]/30 dark:hover:bg-[#222]">
+          <div className="w-9 h-9 rounded-lg bg-[#f5f5f5] dark:bg-[#333] flex items-center justify-center"><Copy className="w-4 h-4 text-[#6b7280]" /></div>
+          <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">Template</p><p className="text-[10px] text-[#9ca3af] font-mono">{"Reusable with {{variables}}"}</p></div>
           <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
         </button>
         <div className="pt-2">
-          <button onClick={onSendToAI} className="w-full py-3 bg-[#1a1a1a] text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2">
+          <button onClick={onSendToAI} className="w-full py-3 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-sm flex items-center justify-center gap-2">
             <Send className="w-4 h-4" /> Boost & Send to AI
           </button>
         </div>
@@ -487,26 +498,26 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
 
   return (
     <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
-      <div className="bg-white w-full max-w-lg rounded-t-2xl p-6 space-y-2 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="w-8 h-0.5 bg-[#e5e7eb] rounded-full mx-auto mb-2" />
-        <h2 className="font-bold text-base text-center tracking-tight">Send to AI</h2>
-        <div className="bg-[#fafafa] p-3 rounded-lg mb-2 border border-[#f0f0f0]">
+      <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 space-y-2 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
+        <h2 className="font-bold text-base text-center tracking-tight dark:text-white">Send to AI</h2>
+        <div className="bg-[#fafafa] dark:bg-[#222] p-3 rounded-lg mb-2 border border-[#f0f0f0] dark:border-[#333]">
           <p className="text-[10px] text-[#9ca3af] mb-1 font-mono uppercase tracking-wider">Prompt</p>
-          <p className="text-sm text-[#404040] line-clamp-3 leading-relaxed">{promptText}</p>
+          <p className="text-sm text-[#404040] dark:text-[#e5e7eb] line-clamp-3 leading-relaxed">{promptText}</p>
         </div>
         <div className="space-y-1">
           {AI_APPS.map((app) => (
-            <button key={app.id} onClick={() => handleSend(app)} className="w-full flex items-center gap-3 p-3 rounded-xl border border-[#f0f0f0] hover:border-[#d1d5db]">
-              <span className="text-lg w-8 h-8 flex items-center justify-center rounded-lg bg-[#fafafa]">{app.icon}</span>
-              <div className="text-left flex-1"><p className="font-medium text-sm">{app.name}</p><p className="text-[10px] text-[#9ca3af] font-mono">Copy & open</p></div>
+            <button key={app.id} onClick={() => handleSend(app)} className="w-full flex items-center gap-3 p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444]">
+              <span className="text-lg w-8 h-8 flex items-center justify-center rounded-lg bg-[#fafafa] dark:bg-[#222]">{app.icon}</span>
+              <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">{app.name}</p><p className="text-[10px] text-[#9ca3af] font-mono">Copy & open</p></div>
               {copiedId === app.id ? <Check className="w-4 h-4 text-[#4F46E5]" /> : <ExternalLink className="w-4 h-4 text-[#d1d5db]" />}
             </button>
           ))}
         </div>
-        <div className="border-t border-[#f0f0f0] pt-2">
-          <button onClick={handleCopyOnly} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#fafafa]">
-            <span className="w-8 h-8 flex items-center justify-center bg-[#f5f5f5] rounded-lg"><Copy className="w-4 h-4 text-[#6b7280]" /></span>
-            <div className="text-left flex-1"><p className="font-medium text-sm">Copy only</p><p className="text-[10px] text-[#9ca3af] font-mono">To clipboard</p></div>
+        <div className="border-t border-[#f0f0f0] dark:border-[#333] pt-2">
+          <button onClick={handleCopyOnly} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#fafafa] dark:hover:bg-[#222]">
+            <span className="w-8 h-8 flex items-center justify-center bg-[#f5f5f5] dark:bg-[#333] rounded-lg"><Copy className="w-4 h-4 text-[#6b7280]" /></span>
+            <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">Copy only</p><p className="text-[10px] text-[#9ca3af] font-mono">To clipboard</p></div>
             {copiedId === "clipboard" ? <Check className="w-4 h-4 text-[#4F46E5]" /> : null}
           </button>
         </div>
@@ -551,24 +562,24 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
 
   return (
     <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
-      <div className="bg-white w-full max-w-lg rounded-t-2xl p-6 max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="w-8 h-0.5 bg-[#e5e7eb] rounded-full mx-auto mb-3" />
-        <h2 className="font-bold text-base text-center tracking-tight mb-4">AI Review</h2>
+      <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-3" />
+        <h2 className="font-bold text-base text-center tracking-tight mb-4 dark:text-white">AI Review</h2>
         {state === "idle" && (
           <div className="space-y-4">
             <p className="text-xs text-[#9ca3af] text-center font-mono">Evaluate on 5 axes</p>
-            <div className="space-y-1.5 p-3 rounded-lg bg-[#fafafa] border border-[#f0f0f0]">
+            <div className="space-y-1.5 p-3 rounded-lg bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333]">
               {Object.entries(axisLabels).map(([key, label]) => (
                 <div key={key} className="flex items-center gap-2 text-xs"><span className="w-1 h-1 rounded-full bg-[#4F46E5]" /><span className="text-[#6b7280] font-mono">{label}</span></div>
               ))}
             </div>
-            <button onClick={runReview} className="w-full py-3 bg-[#1a1a1a] text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2">
+            <button onClick={runReview} className="w-full py-3 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-sm flex items-center justify-center gap-2">
               <WandSparkles className="w-4 h-4" /> Run Review
             </button>
           </div>
         )}
         {state === "loading" && (
-          <div className="text-center py-16"><div className="animate-spin w-5 h-5 border-2 border-[#1a1a1a] border-t-transparent rounded-full mx-auto mb-4" /><p className="text-[#9ca3af] text-xs font-mono">Reviewing...</p></div>
+          <div className="text-center py-16"><div className="animate-spin w-5 h-5 border-2 border-[#1a1a1a] dark:border-white border-t-transparent rounded-full mx-auto mb-4" /><p className="text-[#9ca3af] text-xs font-mono">Reviewing...</p></div>
         )}
         {state === "done" && (
           <div className="space-y-4">
@@ -583,13 +594,13 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
               <div className="markdown-preview text-sm"><MarkdownPreview content={suggestion} /></div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => navigator.clipboard.writeText(suggestion)} className="flex-1 py-2.5 border border-[#f0f0f0] text-[#6b7280] font-medium rounded-xl text-xs">Copy</button>
-              <button onClick={() => onApply(suggestion)} className="flex-1 py-2.5 bg-[#1a1a1a] text-white font-medium rounded-xl text-xs">Apply</button>
+              <button onClick={() => navigator.clipboard.writeText(suggestion)} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs">Copy</button>
+              <button onClick={() => onApply(suggestion)} className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-xs">Apply</button>
             </div>
             <div className="flex items-center justify-center gap-4 text-[11px] text-[#d1d5db]">
               <span className="font-mono">Helpful?</span>
-              <button className="p-2 hover:text-[#1a1a1a]"><ThumbsUp className="w-3.5 h-3.5" /></button>
-              <button className="p-2 hover:text-[#1a1a1a]"><ThumbsDown className="w-3.5 h-3.5" /></button>
+              <button className="p-2 hover:text-[#1a1a1a] dark:hover:text-white"><ThumbsUp className="w-3.5 h-3.5" /></button>
+              <button className="p-2 hover:text-[#1a1a1a] dark:hover:text-white"><ThumbsDown className="w-3.5 h-3.5" /></button>
             </div>
           </div>
         )}

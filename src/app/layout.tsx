@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white dark:bg-[#1a1a1a]`}
         style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}
       >
         <AuthProvider>

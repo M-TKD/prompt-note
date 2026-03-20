@@ -74,7 +74,7 @@ export default function HomePage() {
       {/* Header */}
       <div className="mb-8 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a]">Notes</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Notes</h1>
           <p className="text-xs text-[#9ca3af] mt-1 font-mono">{documents.length} items</p>
         </div>
         {/* Import button */}
@@ -96,7 +96,7 @@ export default function HomePage() {
       </div>
 
       {/* Filter */}
-      <div className="flex gap-4 mb-8 border-b border-[#f0f0f0]">
+      <div className="flex gap-4 mb-8 border-b border-[#f0f0f0] dark:border-[#333]">
         {[
           { key: "all" as const, label: "All" },
           { key: "note" as const, label: "Memo" },
@@ -107,7 +107,7 @@ export default function HomePage() {
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`pb-2.5 text-xs font-medium tracking-wide ${
-              filter === f.key ? "text-[#1a1a1a] border-b-2 border-[#1a1a1a]" : "text-[#d1d5db]"
+              filter === f.key ? "text-[#1a1a1a] dark:text-white border-b-2 border-[#1a1a1a] dark:border-white" : "text-[#d1d5db] dark:text-[#6b7280]"
             }`}
           >
             {f.label}
@@ -117,10 +117,10 @@ export default function HomePage() {
 
       {/* Boost suggestion */}
       {showSuggestion && (
-        <div className="mb-6 p-4 border border-[#EEF2FF] bg-[#EEF2FF]/30 rounded-lg">
+        <div className="mb-6 p-4 border border-[#EEF2FF] dark:border-[#333] bg-[#EEF2FF]/30 dark:bg-[#222] rounded-lg">
           <div className="flex items-start justify-between">
             <div>
-              <p className="font-medium text-sm text-[#1a1a1a]">PromptにBoostしませんか？</p>
+              <p className="font-medium text-sm text-[#1a1a1a] dark:text-white">PromptにBoostしませんか？</p>
               <p className="text-xs text-[#9ca3af] mt-1">AI添削や共有が使えます</p>
             </div>
             <button onClick={() => setSuggestionDismissed(true)} className="text-[#d1d5db] text-xs">✕</button>
@@ -130,13 +130,13 @@ export default function HomePage() {
 
       {/* Onboarding */}
       {showOnboarding && (
-        <div className="mb-6 p-4 bg-[#fafafa] border border-[#f0f0f0] rounded-xl">
+        <div className="mb-6 p-4 bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-xl">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center shrink-0">
-              <HelpCircle className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-full bg-[#1a1a1a] dark:bg-white flex items-center justify-center shrink-0">
+              <HelpCircle className="w-4 h-4 text-white dark:text-[#1a1a1a]" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-sm text-[#1a1a1a]">PromptNotes へようこそ</p>
+              <p className="font-medium text-sm text-[#1a1a1a] dark:text-white">PromptNotes へようこそ</p>
               <p className="text-xs text-[#9ca3af] mt-0.5 leading-relaxed">メモを書いて、Promptに磨いて、AIに送る。</p>
               <div className="flex items-center gap-3 mt-3">
                 <Link href="/howto" className="text-[11px] font-medium text-[#4F46E5]">使い方を見る →</Link>
@@ -149,12 +149,12 @@ export default function HomePage() {
 
       {/* Sign up CTA (only when not logged in and not dismissed) */}
       {!authLoading && !user && !signupDismissed && documents.length >= 1 && (
-        <div className="mb-6 p-4 bg-[#1a1a1a] rounded-xl">
+        <div className="mb-6 p-4 bg-[#1a1a1a] dark:bg-[#222] dark:border dark:border-[#333] rounded-xl">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <p className="font-medium text-sm text-white">アカウントを作成しませんか？</p>
               <p className="text-[11px] text-[#9ca3af] mt-0.5 leading-relaxed">データのバックアップやデバイス間の同期ができます</p>
-              <Link href="/auth" className="inline-flex items-center gap-1 mt-2.5 text-[11px] font-medium text-[#4F46E5] bg-white px-3 py-1.5 rounded-full">
+              <Link href="/auth" className="inline-flex items-center gap-1 mt-2.5 text-[11px] font-medium text-[#4F46E5] bg-white dark:bg-[#333] px-3 py-1.5 rounded-full">
                 Sign up free <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -167,7 +167,7 @@ export default function HomePage() {
       {filtered.length === 0 ? (
         <div className="text-center py-28">
           <p className="text-[#d1d5db] text-sm">No notes yet</p>
-          <p className="text-[#e5e7eb] text-xs mt-1.5">Tap + to start, or Import .md files</p>
+          <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5">Tap + to start, or Import .md files</p>
         </div>
       ) : (
         <div>
@@ -178,7 +178,7 @@ export default function HomePage() {
               {pinned.map((doc) => (
                 <DocumentRow key={doc.id} doc={doc} isPinned onDelete={() => handleDelete(doc.id)} onTogglePin={() => handleTogglePin(doc.id)} />
               ))}
-              {unpinned.length > 0 && <div className="border-t border-[#f0f0f0] my-3" />}
+              {unpinned.length > 0 && <div className="border-t border-[#f0f0f0] dark:border-[#333] my-3" />}
             </>
           )}
           {/* Rest */}
@@ -253,7 +253,7 @@ function DocumentRow({ doc, isPinned, onDelete, onTogglePin }: { doc: PromptDocu
       {/* Main row (slides) */}
       <Link
         href={`/editor?id=${doc.id}`}
-        className="group flex items-start gap-3 py-4 border-b border-[#f0f0f0] last:border-0 bg-white relative"
+        className="group flex items-start gap-3 py-4 border-b border-[#f0f0f0] dark:border-[#333] last:border-0 bg-white dark:bg-[#1a1a1a] relative"
         style={{ transform: `translateX(${swipeX}px)` }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -269,7 +269,7 @@ function DocumentRow({ doc, isPinned, onDelete, onTogglePin }: { doc: PromptDocu
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             {isPinned && <Pin className="w-2.5 h-2.5 text-[#4F46E5] shrink-0" />}
-            <p className="font-medium text-sm text-[#1a1a1a] truncate">{displayTitle}</p>
+            <p className="font-medium text-sm text-[#1a1a1a] dark:text-white truncate">{displayTitle}</p>
           </div>
           {bodyPreview && <p className="text-xs text-[#9ca3af] mt-0.5 line-clamp-1">{bodyPreview}</p>}
           <div className="flex items-center gap-2 mt-2">

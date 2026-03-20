@@ -7,9 +7,10 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 
 const POPULAR_TAGS = [
-  "business", "marketing", "programming", "writing",
-  "proposal", "email", "translation", "summary", "image",
-  "brainstorm", "analysis", "ChatGPT", "Claude",
+  "ビジネス", "開発", "ライティング", "画像生成",
+  "要約", "メール", "レポート", "コードレビュー",
+  "デバッグ", "ブログ", "学習", "翻訳",
+  "ChatGPT", "Claude", "Midjourney",
 ];
 
 export default function SearchPage() {
@@ -31,7 +32,7 @@ export default function SearchPage() {
   return (
     <div className="px-6 pt-14">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a]">Search</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Search</h1>
       </div>
 
       {/* Search input */}
@@ -42,7 +43,7 @@ export default function SearchPage() {
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search..."
-          className="w-full pl-9 pr-4 py-2.5 bg-[#fafafa] border border-[#f0f0f0] rounded-lg text-sm outline-none focus:border-[#d1d5db] placeholder:text-[#d1d5db] font-mono"
+          className="w-full pl-9 pr-4 py-2.5 bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg text-sm outline-none focus:border-[#d1d5db] dark:focus:border-[#444] placeholder:text-[#d1d5db] dark:placeholder:text-[#444] dark:text-white font-mono"
         />
       </div>
 
@@ -54,7 +55,7 @@ export default function SearchPage() {
               <button
                 key={tag}
                 onClick={() => handleSearch(tag)}
-                className="px-2.5 py-1 text-[11px] text-[#9ca3af] rounded border border-[#f0f0f0] hover:border-[#d1d5db] hover:text-[#6b7280] font-mono"
+                className="px-2.5 py-1 text-[11px] text-[#9ca3af] rounded border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444] hover:text-[#6b7280] font-mono"
               >
                 #{tag}
               </button>
@@ -71,14 +72,14 @@ export default function SearchPage() {
             <Link
               key={doc.id}
               href={`/editor?id=${doc.id}`}
-              className="flex items-start gap-3 py-3.5 border-b border-[#f0f0f0] last:border-0"
+              className="flex items-start gap-3 py-3.5 border-b border-[#f0f0f0] dark:border-[#333] last:border-0"
             >
               <div className={`w-0.5 h-7 rounded-full mt-0.5 shrink-0 ${
                 doc.type === "note" ? "bg-[#e5e7eb]" :
                 doc.type === "prompt" ? "bg-[#4F46E5]" : "bg-[#9ca3af]"
               }`} />
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-[#1a1a1a] truncate">
+                <p className="font-medium text-sm text-[#1a1a1a] dark:text-white truncate">
                   {doc.title || doc.bodyMd.split("\n")[0]?.slice(0, 40) || "Untitled"}
                 </p>
                 <p className="text-xs text-[#9ca3af] line-clamp-1 mt-0.5">{doc.bodyMd.replace(/\n/g, " ")}</p>

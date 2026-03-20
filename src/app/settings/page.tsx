@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff } from "lucide-react";
+import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, Upload } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, signOut, loading } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [exportDone, setExportDone] = useState(false);
+  const [importDone, setImportDone] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
   const [aiProvider, setAiProvider] = useState<"openai" | "anthropic">("openai");
   const [aiApiKey, setAiApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -51,6 +53,27 @@ export default function SettingsPage() {
     URL.revokeObjectURL(url);
     setExportDone(true);
     setTimeout(() => setExportDone(false), 2000);
+  };
+
+  const importBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (Array.isArray(data)) {
+        const existing = localStorage.getItem("promptnote_documents");
+        const existingDocs = existing ? JSON.parse(existing) : [];
+        const existingIds = new Set(existingDocs.map((d: { id: string }) => d.id));
+        const newDocs = data.filter((d: { id: string }) => !existingIds.has(d.id));
+        localStorage.setItem("promptnote_documents", JSON.stringify([...existingDocs, ...newDocs]));
+        setImportDone(true);
+        setTimeout(() => setImportDone(false), 2000);
+      }
+    } catch {
+      alert("ファイルの形式が正しくありません");
+    }
+    if (importRef.current) importRef.current.value = "";
   };
 
   const clearAllData = () => {
@@ -206,6 +229,17 @@ export default function SettingsPage() {
             <span className="text-sm text-[#1a1a1a] dark:text-white">Export all data</span>
             <span className="text-[10px] text-[#9ca3af] font-mono">{exportDone ? "✓ Done" : "JSON"}</span>
           </button>
+          <button onClick={() => importRef.current?.click()} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
+            <span className="text-sm text-[#1a1a1a] dark:text-white">Import backup</span>
+            <span className="text-[10px] text-[#9ca3af] font-mono">{importDone ? "✓ Done" : "JSON"}</span>
+          </button>
+          <input
+            ref={importRef}
+            type="file"
+            accept=".json"
+            onChange={importBackup}
+            className="hidden"
+          />
           <button onClick={clearAllData} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
             <div className="flex items-center gap-2.5">
               <Trash2 className="w-4 h-4 text-red-400" />
@@ -221,7 +255,7 @@ export default function SettingsPage() {
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           <div className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333] text-sm">
             <span className="text-[#1a1a1a] dark:text-white">Version</span>
-            <span className="text-[#9ca3af] font-mono text-xs">0.2.0</span>
+            <span className="text-[#9ca3af] font-mono text-xs">0.3.0</span>
           </div>
         </div>
       </section>

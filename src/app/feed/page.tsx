@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { store } from "@/lib/store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
 import { Heart, GitFork, Copy, Check } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
-import Link from "next/link";
 
 export default function FeedPage() {
+  const router = useRouter();
   const [docs, setDocs] = useState<PromptDocument[]>([]);
   const [category, setCategory] = useState("すべて");
   const [sort, setSort] = useState<"popular" | "recent">("popular");
@@ -33,7 +34,7 @@ export default function FeedPage() {
   return (
     <div className="px-6 pt-14">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a]">Explore</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Explore</h1>
         <p className="text-xs text-[#9ca3af] mt-1 font-mono">Community prompts</p>
       </div>
 
@@ -45,8 +46,8 @@ export default function FeedPage() {
             onClick={() => setCategory(cat)}
             className={`px-3 py-1 rounded text-[11px] font-mono whitespace-nowrap ${
               category === cat
-                ? "bg-[#1a1a1a] text-white"
-                : "text-[#d1d5db] hover:text-[#6b7280]"
+                ? "bg-[#1a1a1a] text-white dark:bg-white dark:text-[#1a1a1a]"
+                : "text-[#d1d5db] dark:text-[#6b7280] hover:text-[#6b7280]"
             }`}
           >
             {cat}
@@ -55,7 +56,7 @@ export default function FeedPage() {
       </div>
 
       {/* Sort */}
-      <div className="flex gap-4 mb-6 text-[11px] border-b border-[#f0f0f0]">
+      <div className="flex gap-4 mb-6 text-[11px] border-b border-[#f0f0f0] dark:border-[#333]">
         {[
           { key: "popular" as const, label: "Popular" },
           { key: "recent" as const, label: "Recent" },
@@ -64,7 +65,7 @@ export default function FeedPage() {
             key={s.key}
             onClick={() => setSort(s.key)}
             className={`pb-2 font-mono tracking-wide ${
-              sort === s.key ? "text-[#1a1a1a] border-b-2 border-[#1a1a1a]" : "text-[#d1d5db]"
+              sort === s.key ? "text-[#1a1a1a] dark:text-white border-b-2 border-[#1a1a1a] dark:border-white" : "text-[#d1d5db] dark:text-[#6b7280]"
             }`}
           >
             {s.label}
@@ -76,7 +77,7 @@ export default function FeedPage() {
       {docs.length === 0 ? (
         <div className="text-center py-28">
           <p className="text-[#d1d5db] text-sm">No public prompts yet</p>
-          <p className="text-[#e5e7eb] text-xs mt-1.5 font-mono">Be the first</p>
+          <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">Be the first</p>
         </div>
       ) : (
         <div>
@@ -84,9 +85,9 @@ export default function FeedPage() {
             <div
               key={doc.id}
               onClick={() => setSelected(doc)}
-              className="py-4 border-b border-[#f0f0f0] last:border-0 cursor-pointer"
+              className="py-4 border-b border-[#f0f0f0] dark:border-[#333] last:border-0 cursor-pointer"
             >
-              <p className="font-medium text-sm text-[#1a1a1a] mb-1">{doc.title || doc.bodyMd.split("\n")[0]?.slice(0, 40)}</p>
+              <p className="font-medium text-sm text-[#1a1a1a] dark:text-white mb-1">{doc.title || doc.bodyMd.split("\n")[0]?.slice(0, 40)}</p>
               <p className="text-xs text-[#9ca3af] line-clamp-2 mb-2 leading-relaxed">{doc.bodyMd.replace(/\n/g, " ")}</p>
 
               {doc.tags.length > 0 && (
@@ -114,23 +115,32 @@ export default function FeedPage() {
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={() => setSelected(null)}>
-          <div className="bg-white w-full max-w-lg rounded-t-2xl p-6 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="w-8 h-0.5 bg-[#e5e7eb] rounded-full mx-auto mb-4" />
-            <h2 className="font-bold text-base tracking-tight mb-2">{selected.title || "Prompt Detail"}</h2>
+          <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-4" />
+            <h2 className="font-bold text-base tracking-tight mb-2 dark:text-white">{selected.title || "Prompt Detail"}</h2>
             <div className="flex gap-1.5 mb-3">
               <span className="text-[10px] text-[#9ca3af] font-mono">{TYPE_CONFIG[selected.type].label}</span>
               {selected.tags.map((t) => <span key={t} className="text-[10px] text-[#d1d5db] font-mono">#{t}</span>)}
             </div>
-            <div className="markdown-preview bg-[#fafafa] p-4 rounded-xl mb-4 border border-[#f0f0f0]">
+            <div className="markdown-preview bg-[#fafafa] dark:bg-[#222] p-4 rounded-xl mb-4 border border-[#f0f0f0] dark:border-[#333]">
               <MarkdownPreview content={selected.bodyMd} />
             </div>
             <div className="flex gap-2">
-              <button onClick={() => handleCopy(selected)} className="flex-1 py-2.5 border border-[#f0f0f0] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa]">
+              <button onClick={() => handleCopy(selected)} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]">
                 <Copy className="w-3.5 h-3.5" /> Copy
               </button>
-              <Link href={`/editor?mode=quick`} onClick={() => { store.fork(selected.id); }} className="flex-1 py-2.5 bg-[#1a1a1a] text-white rounded-xl text-xs font-medium text-center flex items-center justify-center gap-1">
+              <button
+                onClick={() => {
+                  const forked = store.fork(selected.id);
+                  if (forked) {
+                    setSelected(null);
+                    router.push(`/editor?id=${forked.id}`);
+                  }
+                }}
+                className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] rounded-xl text-xs font-medium text-center flex items-center justify-center gap-1"
+              >
                 <GitFork className="w-3.5 h-3.5" /> Fork
-              </Link>
+              </button>
             </div>
             <button onClick={() => setSelected(null)} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
           </div>

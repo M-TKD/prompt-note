@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: #ffffff;
   --color-foreground: #1a1a1a;
@@ -54,6 +56,12 @@ textarea:focus { outline: none; }
 .dark .markdown-preview h1, .dark .markdown-preview h2, .dark .markdown-preview h3 { color: #e5e7eb; }
 .dark .markdown-preview p, .dark .markdown-preview li { color: #9ca3af; }
 .dark .markdown-preview code { background: #1a1a1a; color: #e5e7eb; }
+.dark .markdown-preview hr { border-top-color: #333; }
+.dark .markdown-preview blockquote { color: #9ca3af; }
+
+/* Dark mode - input & form elements */
+.dark input, .dark textarea { color: #e5e7eb; }
+.dark input::placeholder, .dark textarea::placeholder { color: #444; }
 
 /* Disable all transitions for clean feel */
 * { transition: none !important; }
