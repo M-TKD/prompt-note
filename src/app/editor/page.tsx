@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
-import { store } from "@/lib/store";
+import { useStore } from "@/lib/use-store";
 import { DocumentType, DocumentVisibility, TYPE_CONFIG, AI_APPS, extractVariables, fillTemplate } from "@/lib/types";
 import {
   ArrowLeft, Eye, Pencil, WandSparkles, Send, ArrowUpCircle,
@@ -16,6 +16,7 @@ import {
 function EditorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const hybridStore = useStore();
   const editId = searchParams.get("id");
   const mode = searchParams.get("mode");
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -37,28 +38,31 @@ function EditorContent() {
 
   // Load existing doc or restore draft
   useEffect(() => {
-    if (editId) {
-      const doc = store.getDocument(editId);
-      if (doc) {
-        setTitle(doc.title || "");
-        setBodyMd(doc.bodyMd);
-        setDocType(doc.type);
-        setVisibility(doc.visibility);
-        setTags(doc.tags);
+    const loadDocument = async () => {
+      if (editId) {
+        const doc = await hybridStore.getDocument(editId);
+        if (doc) {
+          setTitle(doc.title || "");
+          setBodyMd(doc.bodyMd);
+          setDocType(doc.type);
+          setVisibility(doc.visibility);
+          setTags(doc.tags);
+        }
+      } else if (!mode) {
+        // Check for saved draft
+        const draft = hybridStore.getDraft();
+        if (draft && draft.bodyMd) {
+          setTitle(draft.title);
+          setBodyMd(draft.bodyMd);
+          setDocType(draft.type as DocumentType);
+          setTags(draft.tags);
+          setDraftRestored(true);
+          setTimeout(() => setDraftRestored(false), 2000);
+        }
       }
-    } else if (!mode) {
-      // Check for saved draft
-      const draft = store.getDraft();
-      if (draft && draft.bodyMd) {
-        setTitle(draft.title);
-        setBodyMd(draft.bodyMd);
-        setDocType(draft.type as DocumentType);
-        setTags(draft.tags);
-        setDraftRestored(true);
-        setTimeout(() => setDraftRestored(false), 2000);
-      }
-    }
-  }, [editId, mode]);
+    };
+    loadDocument();
+  }, [editId, mode, hybridStore]);
 
   // Auto-save draft every 3 seconds (only for new docs)
   useEffect(() => {
@@ -66,11 +70,11 @@ function EditorContent() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     if (bodyMd.trim()) {
       autoSaveTimer.current = setTimeout(() => {
-        store.saveDraft({ title, bodyMd, type: docType, tags });
+        hybridStore.saveDraft({ title, bodyMd, type: docType, tags });
       }, 3000);
     }
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [title, bodyMd, docType, tags, editId]);
+  }, [title, bodyMd, docType, tags, editId, hybridStore]);
 
   // Warn about unsaved changes
   useEffect(() => {
@@ -91,7 +95,7 @@ function EditorContent() {
   const wordCount = bodyMd.trim() ? bodyMd.trim().length : 0;
   const variables = extractVariables(bodyMd);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!hasContent) return;
     const data = {
       userId: "local",
@@ -102,14 +106,17 @@ function EditorContent() {
       tags,
     };
     if (editId) {
-      store.update(editId, data);
+      await hybridStore.update(editId, data);
     } else {
-      store.create(data);
-      store.clearDraft();
+      const created = await hybridStore.create(data);
+      hybridStore.clearDraft();
+      if (created?.id) {
+        router.replace(`/editor?id=${created.id}`);
+      }
     }
     setSaved(true);
     setTimeout(() => router.push("/"), 500);
-  }, [editId, title, bodyMd, docType, visibility, tags, isNote, hasContent, router]);
+  }, [editId, title, bodyMd, docType, visibility, tags, isNote, hasContent, router, hybridStore]);
 
   const handlePromote = (newType: DocumentType) => {
     setDocType(newType);

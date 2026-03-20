@@ -1,34 +1,75 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { store } from "@/lib/store";
+import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
 import { Heart, GitFork, Copy, Check } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 
 export default function FeedPage() {
   const router = useRouter();
+  const hybridStore = useStore();
   const [docs, setDocs] = useState<PromptDocument[]>([]);
   const [category, setCategory] = useState("すべて");
   const [sort, setSort] = useState<"popular" | "recent">("popular");
   const [selected, setSelected] = useState<PromptDocument | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  const fetchDocs = useCallback(async () => {
+    setLoading(true);
+    try {
+      hybridStore.ensureSeedData();
+      const documents = await hybridStore.getPublicDocuments(sort, category);
+      setDocs(documents);
+      // Resolve liked state for all documents
+      const liked = new Set<string>();
+      await Promise.all(
+        documents.map(async (doc) => {
+          const isLiked = await hybridStore.isLiked(doc.id);
+          if (isLiked) liked.add(doc.id);
+        })
+      );
+      setLikedIds(liked);
+    } finally {
+      setLoading(false);
+    }
+  }, [hybridStore, sort, category]);
 
   useEffect(() => {
-    store.ensureSeedData();
-    setDocs(store.getPublicDocuments(sort, category));
-  }, [sort, category]);
+    fetchDocs();
+  }, [fetchDocs]);
 
-  const handleLike = (id: string) => {
-    store.toggleLike(id);
-    setDocs(store.getPublicDocuments(sort, category));
+  const handleLike = async (id: string) => {
+    const nowLiked = await hybridStore.toggleLike(id);
+    setLikedIds((prev) => {
+      const next = new Set(prev);
+      if (nowLiked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+    // Refetch documents to update like counts
+    const documents = await hybridStore.getPublicDocuments(sort, category);
+    setDocs(documents);
   };
 
   const handleCopy = (doc: PromptDocument) => {
     navigator.clipboard.writeText(doc.bodyMd);
     setCopiedId(doc.id);
     setTimeout(() => setCopiedId(null), 1500);
+  };
+
+  const handleFork = async (doc: PromptDocument) => {
+    const forked = await hybridStore.fork(doc.id);
+    if (forked) {
+      setSelected(null);
+      router.push(`/editor?id=${forked.id}`);
+    }
   };
 
   return (
@@ -74,7 +115,11 @@ export default function FeedPage() {
       </div>
 
       {/* Feed */}
-      {docs.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-28">
+          <p className="text-[#d1d5db] text-sm font-mono">Loading...</p>
+        </div>
+      ) : docs.length === 0 ? (
         <div className="text-center py-28">
           <p className="text-[#d1d5db] text-sm">No public prompts yet</p>
           <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">Be the first</p>
@@ -99,8 +144,8 @@ export default function FeedPage() {
               )}
 
               <div className="flex items-center gap-4 text-[10px] text-[#d1d5db] font-mono">
-                <button onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }} className="flex items-center gap-1 hover:text-[#4F46E5]">
-                  <Heart className="w-3 h-3" /> {doc.likeCount}
+                <button onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }} className={`flex items-center gap-1 hover:text-[#4F46E5] ${likedIds.has(doc.id) ? "text-[#4F46E5]" : ""}`}>
+                  <Heart className={`w-3 h-3 ${likedIds.has(doc.id) ? "fill-current" : ""}`} /> {doc.likeCount}
                 </button>
                 <span className="flex items-center gap-1"><GitFork className="w-3 h-3" /> {doc.forkCount}</span>
                 <button onClick={(e) => { e.stopPropagation(); handleCopy(doc); }} className="ml-auto hover:text-[#6b7280]">
@@ -130,13 +175,7 @@ export default function FeedPage() {
                 <Copy className="w-3.5 h-3.5" /> Copy
               </button>
               <button
-                onClick={() => {
-                  const forked = store.fork(selected.id);
-                  if (forked) {
-                    setSelected(null);
-                    router.push(`/editor?id=${forked.id}`);
-                  }
-                }}
+                onClick={() => handleFork(selected)}
                 className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] rounded-xl text-xs font-medium text-center flex items-center justify-center gap-1"
               >
                 <GitFork className="w-3.5 h-3.5" /> Fork

@@ -1,26 +1,46 @@
 "use client";
 
-import { useState, useEffect, useRef, TouchEvent } from "react";
+import { useState, useEffect, useRef, useCallback, TouchEvent } from "react";
 import Link from "next/link";
-import { store } from "@/lib/store";
+import { useStore } from "@/lib/use-store";
 import { useAuth } from "@/lib/auth-context";
 import { PromptDocument, TYPE_CONFIG, DocumentType } from "@/lib/types";
 import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check, ArrowRight } from "lucide-react";
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
+  const hybridStore = useStore();
   const [documents, setDocuments] = useState<PromptDocument[]>([]);
   const [filter, setFilter] = useState<DocumentType | "all">("all");
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [signupDismissed, setSignupDismissed] = useState(false);
+  const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Seed data for local-only mode
   useEffect(() => {
-    setDocuments(store.getDocuments());
+    if (!hybridStore.isCloud) {
+      hybridStore.ensureSeedData();
+    }
+  }, [hybridStore.isCloud]);
+
+  // Load documents
+  const fetchDocuments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const docs = await hybridStore.getDocuments();
+      setDocuments(docs);
+    } finally {
+      setLoading(false);
+    }
+  }, [hybridStore]);
+
+  useEffect(() => {
+    fetchDocuments();
     const seen = localStorage.getItem("promptnote_onboarding_seen");
     if (!seen) setShowOnboarding(true);
-  }, []);
+  }, [fetchDocuments]);
 
   const filtered = filter === "all" ? documents : documents.filter((d) => d.type === filter);
   const pinnedIds = getPinnedIds();
@@ -31,16 +51,16 @@ export default function HomePage() {
   const promptCount = documents.filter((d) => d.type === "prompt").length;
   const showSuggestion = !suggestionDismissed && noteCount >= 3 && promptCount === 0;
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("削除しますか？")) {
-      store.delete(id);
-      setDocuments(store.getDocuments());
+      await hybridStore.delete(id);
+      await fetchDocuments();
     }
   };
 
-  const handleTogglePin = (id: string) => {
+  const handleTogglePin = async (id: string) => {
     togglePin(id);
-    setDocuments([...store.getDocuments()]);
+    await fetchDocuments();
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,7 +71,7 @@ export default function HomePage() {
       if (file.name.endsWith(".md") || file.name.endsWith(".txt") || file.name.endsWith(".markdown")) {
         const text = await file.text();
         const titleFromFile = file.name.replace(/\.(md|txt|markdown)$/, "");
-        store.create({
+        await hybridStore.create({
           userId: "local",
           title: titleFromFile,
           bodyMd: text,
@@ -63,7 +83,7 @@ export default function HomePage() {
       }
     }
     if (imported > 0) {
-      setDocuments(store.getDocuments());
+      await fetchDocuments();
     }
     // Reset input
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -164,7 +184,13 @@ export default function HomePage() {
       )}
 
       {/* Document list */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="space-y-4 py-8">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 bg-[#f5f5f5] dark:bg-[#222] rounded-lg animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-28">
           <p className="text-[#d1d5db] text-sm">No notes yet</p>
           <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5">Tap + to start, or Import .md files</p>

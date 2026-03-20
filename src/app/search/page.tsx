@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { store } from "@/lib/store";
+import { useState, useCallback, useRef } from "react";
+import { useStore } from "@/lib/use-store";
 import { PromptDocument, TYPE_CONFIG } from "@/lib/types";
 import { Search } from "lucide-react";
 import Link from "next/link";
@@ -14,20 +14,44 @@ const POPULAR_TAGS = [
 ];
 
 export default function SearchPage() {
+  const hybridStore = useStore();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PromptDocument[]>([]);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSearch = (q: string) => {
-    setQuery(q);
+  const performSearch = useCallback(async (q: string) => {
     if (q.trim()) {
-      setResults(store.search(q));
-      setSearched(true);
+      setLoading(true);
+      try {
+        const docs = await hybridStore.search(q);
+        setResults(docs);
+        setSearched(true);
+      } finally {
+        setLoading(false);
+      }
     } else {
       setResults([]);
       setSearched(false);
     }
-  };
+  }, [hybridStore]);
+
+  const handleSearch = useCallback((q: string) => {
+    setQuery(q);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      performSearch(q);
+    }, 300);
+  }, [performSearch]);
+
+  const handleTagClick = useCallback((tag: string) => {
+    setQuery(tag);
+    // Immediate search for tag clicks (no debounce)
+    performSearch(tag);
+  }, [performSearch]);
 
   return (
     <div className="px-6 pt-14">
@@ -54,13 +78,17 @@ export default function SearchPage() {
             {POPULAR_TAGS.map((tag) => (
               <button
                 key={tag}
-                onClick={() => handleSearch(tag)}
+                onClick={() => handleTagClick(tag)}
                 className="px-2.5 py-1 text-[11px] text-[#9ca3af] rounded border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444] hover:text-[#6b7280] font-mono"
               >
                 #{tag}
               </button>
             ))}
           </div>
+        </div>
+      ) : loading ? (
+        <div className="text-center py-24">
+          <p className="text-[#9ca3af] text-xs font-mono">Searching...</p>
         </div>
       ) : results.length === 0 ? (
         <div className="text-center py-24">
