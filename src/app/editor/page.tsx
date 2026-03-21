@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
 import { useStore } from "@/lib/use-store";
+import { useAuth } from "@/lib/auth-context";
 import { DocumentType, DocumentVisibility, TYPE_CONFIG, AI_APPS, extractVariables, fillTemplate } from "@/lib/types";
 import {
   ArrowLeft, Eye, Pencil, WandSparkles, Send, ArrowUpCircle,
@@ -551,27 +552,47 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
 // --- AI Review Sheet ---
 function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: (suggestion: string) => void; onClose: () => void }) {
   const { toast } = useToast();
+  const { session } = useAuth();
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [scores, setScores] = useState<Record<string, { grade: string; feedback: string }>>({});
   const [overall, setOverall] = useState("");
   const [suggestion, setSuggestion] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [usage, setUsage] = useState<{ used: number; limit: number } | null>(null);
+  const [isLimitReached, setIsLimitReached] = useState(false);
+
+  const hasOwnKey = typeof window !== "undefined" && !!localStorage.getItem("promptnote_ai_apikey");
 
   const runReview = async () => {
     setState("loading");
     try {
-      // Get user's API key from localStorage
       const provider = typeof window !== "undefined" ? localStorage.getItem("promptnote_ai_provider") || "" : "";
       const apiKey = typeof window !== "undefined" ? localStorage.getItem("promptnote_ai_apikey") || "" : "";
-      const res = await fetch("/api/ai-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bodyMd, provider, apiKey }) });
+      const accessToken = session?.access_token || "";
+
+      const res = await fetch("/api/ai-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bodyMd, provider, apiKey, accessToken }),
+      });
+
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
+        if (errData.error === "free_limit_reached") {
+          setIsLimitReached(true);
+          setUsage({ used: errData.usage, limit: errData.limit });
+          setState("error");
+          setErrorMsg(errData.message);
+          return;
+        }
         throw new Error(errData.error || "Failed");
       }
+
       const data = await res.json();
       setScores(data.scores);
       setOverall(data.overall);
       setSuggestion(data.suggestionMd);
+      if (data._usage) setUsage(data._usage);
       setState("done");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Review failed");
@@ -579,7 +600,7 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
     }
   };
 
-  const gradeColor: Record<string, string> = { A: "text-[#1a1a1a]", B: "text-[#404040]", C: "text-[#4F46E5]", D: "text-red-500" };
+  const gradeColor: Record<string, string> = { A: "text-[#1a1a1a] dark:text-white", B: "text-[#404040] dark:text-[#ccc]", C: "text-[#4F46E5]", D: "text-red-500" };
   const axisLabels: Record<string, string> = { clarity: "Clarity", specificity: "Specificity", structure: "Structure", context: "Context", constraints: "Constraints" };
 
   return (
@@ -589,19 +610,24 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
         <h2 className="font-bold text-base text-center tracking-tight mb-4 dark:text-white">AI Review</h2>
         {state === "idle" && (
           <div className="space-y-4">
-            <p className="text-xs text-[#9ca3af] text-center font-mono">Evaluate on 5 axes</p>
+            <p className="text-xs text-[#9ca3af] text-center font-mono">5つの軸でプロンプトを評価</p>
             <div className="space-y-1.5 p-3 rounded-lg bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333]">
               {Object.entries(axisLabels).map(([key, label]) => (
                 <div key={key} className="flex items-center gap-2 text-xs"><span className="w-1 h-1 rounded-full bg-[#4F46E5]" /><span className="text-[#6b7280] font-mono">{label}</span></div>
               ))}
             </div>
+            {!hasOwnKey && (
+              <p className="text-[10px] text-[#9ca3af] text-center">
+                月10回まで無料 {usage ? `（${usage.used}/${usage.limit} 使用済み）` : ""}
+              </p>
+            )}
             <button onClick={runReview} className="w-full py-3 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-sm flex items-center justify-center gap-2">
-              <WandSparkles className="w-4 h-4" /> Run Review
+              <WandSparkles className="w-4 h-4" /> {hasOwnKey ? "Run Review" : "無料でReview"}
             </button>
           </div>
         )}
         {state === "loading" && (
-          <div className="text-center py-16"><div className="animate-spin w-5 h-5 border-2 border-[#1a1a1a] dark:border-white border-t-transparent rounded-full mx-auto mb-4" /><p className="text-[#9ca3af] text-xs font-mono">Reviewing...</p></div>
+          <div className="text-center py-16"><div className="animate-spin w-5 h-5 border-2 border-[#1a1a1a] dark:border-white border-t-transparent rounded-full mx-auto mb-4" /><p className="text-[#9ca3af] text-xs font-mono">AIが分析中...</p></div>
         )}
         {state === "done" && (
           <div className="space-y-4">
@@ -611,7 +637,7 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
                 <div key={key} className="flex items-center gap-2 text-xs"><span className="w-20 text-[#9ca3af] font-mono text-[11px]">{axisLabels[key] || key}</span><span className={`font-bold w-5 ${gradeColor[val.grade] || ""}`}>{val.grade}</span><span className="text-[#9ca3af] text-[11px] flex-1">{val.feedback}</span></div>
               ))}
             </div>
-            <div className="bg-[#EEF2FF]/30 border border-[#EEF2FF] p-4 rounded-xl">
+            <div className="bg-[#EEF2FF]/30 dark:bg-[#4F46E5]/10 border border-[#EEF2FF] dark:border-[#4F46E5]/20 p-4 rounded-xl">
               <p className="font-medium text-xs mb-2 text-[#4F46E5] font-mono uppercase tracking-wider">Improved</p>
               <div className="markdown-preview text-sm"><MarkdownPreview content={suggestion} /></div>
             </div>
@@ -619,6 +645,9 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
               <button onClick={() => { navigator.clipboard.writeText(suggestion); toast("コピーしました", "copy"); }} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs">Copy</button>
               <button onClick={() => onApply(suggestion)} className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-xs">Apply</button>
             </div>
+            {usage && !hasOwnKey && (
+              <p className="text-[10px] text-[#9ca3af] text-center font-mono">今月 {usage.used}/{usage.limit} 回使用</p>
+            )}
             <div className="flex items-center justify-center gap-4 text-[11px] text-[#d1d5db]">
               <span className="font-mono">Helpful?</span>
               <button className="p-2 hover:text-[#1a1a1a] dark:hover:text-white"><ThumbsUp className="w-3.5 h-3.5" /></button>
@@ -629,8 +658,14 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
         {state === "error" && (
           <div className="text-center py-12 space-y-3">
             <p className="text-[#9ca3af] text-xs font-mono">{errorMsg || "Review failed"}</p>
+            {isLimitReached && (
+              <div className="space-y-2">
+                <p className="text-[10px] text-[#9ca3af]">Settings で自分のAPIキーを設定すると無制限に利用できます</p>
+                <a href="/settings" className="inline-block text-[#4F46E5] text-xs font-medium">Settings →</a>
+              </div>
+            )}
             {errorMsg.includes("APIキー") && <p className="text-[10px] text-[#d1d5db]">Settings → AI Review でキーを設定してください</p>}
-            <button onClick={runReview} className="text-[#4F46E5] text-xs font-medium">Retry</button>
+            {!isLimitReached && <button onClick={runReview} className="text-[#4F46E5] text-xs font-medium">Retry</button>}
           </div>
         )}
         <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
