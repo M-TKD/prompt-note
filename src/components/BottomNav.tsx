@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Compass, Search, Settings, Plus } from "lucide-react";
+import { FileText, Compass, Search, User, Plus } from "lucide-react";
 
 const tabs = [
   { href: "/", icon: FileText, label: "Notes" },
   { href: "/feed", icon: Compass, label: "Explore" },
   { href: "/editor", icon: Plus, label: "", isCenter: true },
   { href: "/search", icon: Search, label: "Search" },
-  { href: "/settings", icon: Settings, label: "Settings" },
+  { href: "/profile", icon: User, label: "Profile" },
 ];
 
 export function BottomNav() {
