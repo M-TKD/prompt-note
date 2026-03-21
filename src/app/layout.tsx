@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
 import { AuthProvider } from "@/lib/auth-context";
+import { ToastProvider } from "@/components/Toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,10 +40,12 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}
       >
         <AuthProvider>
-          <main className="pb-16 max-w-lg mx-auto">
-            {children}
-          </main>
-          <BottomNav />
+          <ToastProvider>
+            <main className="pb-16 max-w-lg mx-auto">
+              {children}
+            </main>
+            <BottomNav />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

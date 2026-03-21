@@ -6,10 +6,12 @@ import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
 import { Heart, GitFork, Copy, Check } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
+import { useToast } from "@/components/Toast";
 
 export default function FeedPage() {
   const router = useRouter();
   const hybridStore = useStore();
+  const { toast } = useToast();
   const [docs, setDocs] = useState<PromptDocument[]>([]);
   const [category, setCategory] = useState("すべて");
   const [sort, setSort] = useState<"popular" | "recent">("popular");
@@ -53,6 +55,9 @@ export default function FeedPage() {
       }
       return next;
     });
+    if (nowLiked) {
+      toast("いいねしました");
+    }
     // Refetch documents to update like counts
     const documents = await hybridStore.getPublicDocuments(sort, category);
     setDocs(documents);
@@ -61,12 +66,14 @@ export default function FeedPage() {
   const handleCopy = (doc: PromptDocument) => {
     navigator.clipboard.writeText(doc.bodyMd);
     setCopiedId(doc.id);
+    toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 1500);
   };
 
   const handleFork = async (doc: PromptDocument) => {
     const forked = await hybridStore.fork(doc.id);
     if (forked) {
+      toast("フォークしました");
       setSelected(null);
       router.push(`/editor?id=${forked.id}`);
     }

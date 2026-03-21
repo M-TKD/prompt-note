@@ -6,10 +6,12 @@ import { useStore } from "@/lib/use-store";
 import { useAuth } from "@/lib/auth-context";
 import { PromptDocument, TYPE_CONFIG, DocumentType } from "@/lib/types";
 import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check, ArrowRight } from "lucide-react";
+import { useToast } from "@/components/Toast";
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
   const hybridStore = useStore();
+  const { toast } = useToast();
   const [documents, setDocuments] = useState<PromptDocument[]>([]);
   const [filter, setFilter] = useState<DocumentType | "all">("all");
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
@@ -55,12 +57,15 @@ export default function HomePage() {
     if (confirm("削除しますか？")) {
       await hybridStore.delete(id);
       await fetchDocuments();
+      toast("削除しました", "delete");
     }
   };
 
   const handleTogglePin = async (id: string) => {
+    const wasPinned = getPinnedIds().includes(id);
     togglePin(id);
     await fetchDocuments();
+    toast(wasPinned ? "ピン留め解除しました" : "ピン留めしました");
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,6 +223,7 @@ export default function HomePage() {
 }
 
 function DocumentRow({ doc, isPinned, onDelete, onTogglePin }: { doc: PromptDocument; isPinned: boolean; onDelete: () => void; onTogglePin: () => void }) {
+  const { toast } = useToast();
   const config = TYPE_CONFIG[doc.type];
   const displayTitle = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 40) || "Untitled";
   const bodyPreview = doc.bodyMd.replace(/\n/g, " ").slice(0, 80);
@@ -258,6 +264,7 @@ function DocumentRow({ doc, isPinned, onDelete, onTogglePin }: { doc: PromptDocu
     e.stopPropagation();
     navigator.clipboard.writeText(doc.bodyMd);
     setCopied(true);
+    toast("コピーしました", "copy");
     setTimeout(() => { setCopied(false); setSwipeX(0); setSwiping(false); }, 1000);
   };
 

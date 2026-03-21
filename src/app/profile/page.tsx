@@ -18,7 +18,9 @@ import {
   Globe,
   User,
   ChevronRight,
+  Settings,
 } from "lucide-react";
+import { useToast } from "@/components/Toast";
 
 interface Profile {
   display_name: string;
@@ -34,6 +36,7 @@ interface Stats {
 export default function ProfilePage() {
   const { user, signOut, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [documents, setDocuments] = useState<PromptDocument[]>([]);
@@ -106,6 +109,7 @@ export default function ProfilePage() {
       await cloudStore.updateProfile(user.id, { display_name: editName.trim() });
       setProfile((prev) => prev ? { ...prev, display_name: editName.trim() } : prev);
       setIsEditing(false);
+      toast("表示名を更新しました");
     } catch (err) {
       console.error("Failed to update name:", err);
     } finally {
@@ -115,6 +119,7 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await signOut();
+    toast("サインアウトしました");
     router.push("/");
   };
 
@@ -384,6 +389,16 @@ export default function ProfilePage() {
                 {user?.id}
               </span>
             </div>
+
+            {/* Settings */}
+            <Link
+              href="/settings"
+              className="flex items-center gap-3 p-4 bg-white dark:bg-[#141414] border border-[#f0f0f0] dark:border-[#333] rounded-xl"
+            >
+              <Settings className="w-4 h-4 text-[#4F46E5]" />
+              <span className="flex-1 text-sm text-[#1a1a1a] dark:text-white">設定</span>
+              <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
+            </Link>
 
             {/* Sign out */}
             <button

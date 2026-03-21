@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
+import { useToast } from "@/components/Toast";
 import { useStore } from "@/lib/use-store";
 import { DocumentType, DocumentVisibility, TYPE_CONFIG, AI_APPS, extractVariables, fillTemplate } from "@/lib/types";
 import {
@@ -17,6 +18,7 @@ function EditorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const hybridStore = useStore();
+  const { toast } = useToast();
   const editId = searchParams.get("id");
   const mode = searchParams.get("mode");
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -97,30 +99,36 @@ function EditorContent() {
 
   const handleSave = useCallback(async () => {
     if (!hasContent) return;
-    const data = {
-      userId: "local",
-      title: title || null,
-      bodyMd,
-      type: docType,
-      visibility: isNote ? "private" as const : visibility,
-      tags,
-    };
-    if (editId) {
-      await hybridStore.update(editId, data);
-    } else {
-      const created = await hybridStore.create(data);
-      hybridStore.clearDraft();
-      if (created?.id) {
-        router.replace(`/editor?id=${created.id}`);
+    try {
+      const data = {
+        userId: "local",
+        title: title || null,
+        bodyMd,
+        type: docType,
+        visibility: isNote ? "private" as const : visibility,
+        tags,
+      };
+      if (editId) {
+        await hybridStore.update(editId, data);
+      } else {
+        const created = await hybridStore.create(data);
+        hybridStore.clearDraft();
+        if (created?.id) {
+          router.replace(`/editor?id=${created.id}`);
+        }
       }
+      setSaved(true);
+      toast("保存しました");
+      setTimeout(() => router.push("/"), 500);
+    } catch {
+      toast("エラーが発生しました", "error");
     }
-    setSaved(true);
-    setTimeout(() => router.push("/"), 500);
-  }, [editId, title, bodyMd, docType, visibility, tags, isNote, hasContent, router, hybridStore]);
+  }, [editId, title, bodyMd, docType, visibility, tags, isNote, hasContent, router, hybridStore, toast]);
 
   const handlePromote = (newType: DocumentType) => {
     setDocType(newType);
     setShowPromote(false);
+    toast("昇格しました");
   };
 
   const handleAddTag = () => {
@@ -159,6 +167,7 @@ function EditorContent() {
   const handleCopy = () => {
     navigator.clipboard.writeText(bodyMd);
     setCopied(true);
+    toast("コピーしました", "copy");
     setTimeout(() => setCopied(false), 1500);
   };
 
@@ -411,6 +420,7 @@ function EditorContent() {
 
 // --- Variables Sheet ---
 function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (filled: string) => void; onClose: () => void }) {
+  const { toast } = useToast();
   const vars = extractVariables(bodyMd);
   const [values, setValues] = useState<Record<string, string>>({});
 
@@ -441,6 +451,7 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
             onClick={() => {
               const filled = fillTemplate(bodyMd, values);
               navigator.clipboard.writeText(filled);
+              toast("コピーしました", "copy");
             }}
             className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs"
           >
@@ -490,16 +501,19 @@ function PromoteSheet({ onPromote, onSendToAI, onClose }: { onPromote: (t: Docum
 
 // --- Send to AI Sheet ---
 function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: () => void }) {
+  const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const handleSend = (app: typeof AI_APPS[number]) => {
     navigator.clipboard.writeText(promptText);
     window.open(app.webUrl, "_blank");
     setCopiedId(app.id);
+    toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 2000);
   };
   const handleCopyOnly = () => {
     navigator.clipboard.writeText(promptText);
     setCopiedId("clipboard");
+    toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -536,6 +550,7 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
 
 // --- AI Review Sheet ---
 function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: (suggestion: string) => void; onClose: () => void }) {
+  const { toast } = useToast();
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [scores, setScores] = useState<Record<string, { grade: string; feedback: string }>>({});
   const [overall, setOverall] = useState("");
@@ -601,7 +616,7 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
               <div className="markdown-preview text-sm"><MarkdownPreview content={suggestion} /></div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => navigator.clipboard.writeText(suggestion)} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs">Copy</button>
+              <button onClick={() => { navigator.clipboard.writeText(suggestion); toast("コピーしました", "copy"); }} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs">Copy</button>
               <button onClick={() => onApply(suggestion)} className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-xs">Apply</button>
             </div>
             <div className="flex items-center justify-center gap-4 text-[11px] text-[#d1d5db]">
