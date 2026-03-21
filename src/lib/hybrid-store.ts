@@ -85,14 +85,46 @@ export function createHybridStore(userId: string | null) {
     },
 
     // -----------------------------------------------
-    // 削除
+    // 削除（ゴミ箱へ移動）
     // -----------------------------------------------
     async delete(id: string): Promise<void> {
       if (isCloud) {
-        await cloudStore.delete(id);
+        await cloudStore.softDelete(id);
       } else {
         store.delete(id);
       }
+    },
+
+    // -----------------------------------------------
+    // ゴミ箱一覧
+    // -----------------------------------------------
+    async getTrash(): Promise<PromptDocument[]> {
+      if (isCloud) {
+        return cloudStore.getTrash(userId!);
+      }
+      return store.getTrash();
+    },
+
+    // -----------------------------------------------
+    // ゴミ箱から復元
+    // -----------------------------------------------
+    async restore(id: string): Promise<boolean> {
+      if (isCloud) {
+        return cloudStore.restore(id);
+      }
+      store.restore(id);
+      return true;
+    },
+
+    // -----------------------------------------------
+    // 完全削除
+    // -----------------------------------------------
+    async permanentDelete(id: string): Promise<boolean> {
+      if (isCloud) {
+        return cloudStore.delete(id);
+      }
+      store.permanentDelete(id);
+      return true;
     },
 
     // -----------------------------------------------
