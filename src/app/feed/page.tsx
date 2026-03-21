@@ -3,10 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/use-store";
+import { supabase } from "@/lib/supabase";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
 import { Heart, GitFork, Copy, Check } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
+
+type AuthorProfile = {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+};
 
 export default function FeedPage() {
   const router = useRouter();
@@ -19,6 +26,7 @@ export default function FeedPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [authors, setAuthors] = useState<Record<string, AuthorProfile>>({});
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -26,6 +34,21 @@ export default function FeedPage() {
       hybridStore.ensureSeedData();
       const documents = await hybridStore.getPublicDocuments(sort, category);
       setDocs(documents);
+
+      // Batch-fetch author profiles
+      const userIds = [...new Set(documents.map((d) => d.userId).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url")
+          .in("id", userIds);
+        if (profiles) {
+          const map: Record<string, AuthorProfile> = {};
+          profiles.forEach((p) => { map[p.id] = p; });
+          setAuthors(map);
+        }
+      }
+
       // Resolve liked state for all documents
       const liked = new Set<string>();
       await Promise.all(
@@ -142,6 +165,29 @@ export default function FeedPage() {
               <p className="font-medium text-sm text-[#1a1a1a] dark:text-white mb-1">{doc.title || doc.bodyMd.split("\n")[0]?.slice(0, 40)}</p>
               <p className="text-xs text-[#9ca3af] line-clamp-2 mb-2 leading-relaxed">{doc.bodyMd.replace(/\n/g, " ")}</p>
 
+              {/* Author */}
+              {authors[doc.userId] && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); router.push(`/profile?userId=${doc.userId}`); }}
+                  className="flex items-center gap-1.5 mb-2"
+                >
+                  {authors[doc.userId].avatar_url ? (
+                    <img
+                      src={authors[doc.userId].avatar_url!}
+                      alt=""
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="w-6 h-6 rounded-full bg-[#e5e7eb] dark:bg-[#333] flex items-center justify-center text-[10px] font-bold text-[#9ca3af]">
+                      {(authors[doc.userId].display_name || "?")[0].toUpperCase()}
+                    </span>
+                  )}
+                  <span className="text-xs text-[#9ca3af]">
+                    {authors[doc.userId].display_name || "Anonymous"}
+                  </span>
+                </button>
+              )}
+
               {doc.tags.length > 0 && (
                 <div className="flex gap-1.5 mb-2">
                   {doc.tags.slice(0, 3).map((t) => (
@@ -170,6 +216,30 @@ export default function FeedPage() {
           <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
             <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-4" />
             <h2 className="font-bold text-base tracking-tight mb-2 dark:text-white">{selected.title || "Prompt Detail"}</h2>
+
+            {/* Author in modal */}
+            {authors[selected.userId] && (
+              <button
+                onClick={() => { setSelected(null); router.push(`/profile?userId=${selected.userId}`); }}
+                className="flex items-center gap-1.5 mb-3"
+              >
+                {authors[selected.userId].avatar_url ? (
+                  <img
+                    src={authors[selected.userId].avatar_url!}
+                    alt=""
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="w-6 h-6 rounded-full bg-[#e5e7eb] dark:bg-[#333] flex items-center justify-center text-[10px] font-bold text-[#9ca3af]">
+                    {(authors[selected.userId].display_name || "?")[0].toUpperCase()}
+                  </span>
+                )}
+                <span className="text-xs text-[#9ca3af]">
+                  {authors[selected.userId].display_name || "Anonymous"}
+                </span>
+              </button>
+            )}
+
             <div className="flex gap-1.5 mb-3">
               <span className="text-[10px] text-[#9ca3af] font-mono">{TYPE_CONFIG[selected.type].label}</span>
               {selected.tags.map((t) => <span key={t} className="text-[10px] text-[#d1d5db] font-mono">#{t}</span>)}

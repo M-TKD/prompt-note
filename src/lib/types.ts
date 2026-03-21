@@ -17,6 +17,7 @@ export interface PromptDocument {
   author?: { name: string; avatarUrl?: string };
   forkedFromId?: string;
   variables?: TemplateVariable[];
+  deletedAt?: string | null;
 }
 
 export interface TemplateVariable {

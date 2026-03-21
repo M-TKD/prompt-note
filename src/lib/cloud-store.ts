@@ -18,6 +18,7 @@ function toDocument(row: Record<string, unknown>): PromptDocument {
     updatedAt: row.updated_at as string,
     forkedFromId: row.forked_from_id as string | undefined,
     variables: row.variables as TemplateVariable[] | undefined,
+    deletedAt: row.deleted_at as string | null | undefined,
   };
 }
 
@@ -30,6 +31,7 @@ export const cloudStore = {
       .from("documents")
       .select("*")
       .eq("user_id", userId)
+      .is("deleted_at", null)
       .order("updated_at", { ascending: false });
 
     if (error) {
@@ -173,7 +175,37 @@ export const cloudStore = {
   },
 
   // -----------------------------------------------
-  // 削除
+  // ソフト削除（ゴミ箱へ移動）
+  // -----------------------------------------------
+  async softDelete(id: string): Promise<boolean> {
+    const { error } = await supabase
+      .from("documents")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) {
+      console.error("softDelete error:", JSON.stringify(error));
+      return false;
+    }
+    return true;
+  },
+
+  // -----------------------------------------------
+  // ゴミ箱から復元
+  // -----------------------------------------------
+  async restore(id: string): Promise<boolean> {
+    const { error } = await supabase
+      .from("documents")
+      .update({ deleted_at: null })
+      .eq("id", id);
+    if (error) {
+      console.error("restore error:", JSON.stringify(error));
+      return false;
+    }
+    return true;
+  },
+
+  // -----------------------------------------------
+  // 完全削除
   // -----------------------------------------------
   async delete(id: string): Promise<boolean> {
     const { error } = await supabase.from("documents").delete().eq("id", id);
@@ -182,6 +214,44 @@ export const cloudStore = {
       return false;
     }
     return true;
+  },
+
+  // -----------------------------------------------
+  // ゴミ箱一覧
+  // -----------------------------------------------
+  async getTrash(userId: string): Promise<PromptDocument[]> {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("user_id", userId)
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (error) {
+      console.error("getTrash error:", JSON.stringify(error));
+      return [];
+    }
+    return (data || []).map(toDocument);
+  },
+
+  // -----------------------------------------------
+  // ゴミ箱を空にする（30日以上前のものを削除）
+  // -----------------------------------------------
+  async emptyOldTrash(userId: string): Promise<number> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from("documents")
+      .delete()
+      .eq("user_id", userId)
+      .not("deleted_at", "is", null)
+      .lt("deleted_at", thirtyDaysAgo)
+      .select("id");
+
+    if (error) {
+      console.error("emptyOldTrash error:", JSON.stringify(error));
+      return 0;
+    }
+    return (data || []).length;
   },
 
   // -----------------------------------------------

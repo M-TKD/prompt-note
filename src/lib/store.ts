@@ -31,7 +31,7 @@ export const store = {
 
   getDocuments(): PromptDocument[] {
     return getAll()
-      .filter(d => d.userId !== "sample")
+      .filter(d => d.userId !== "sample" && !d.deletedAt)
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   },
 
@@ -89,7 +89,35 @@ export const store = {
   },
 
   delete(id: string) {
+    const docs = getAll();
+    const index = docs.findIndex((d) => d.id === id);
+    if (index === -1) return;
+    docs[index] = { ...docs[index], deletedAt: new Date().toISOString() };
+    saveAll(docs);
+  },
+
+  getTrash(): PromptDocument[] {
+    return getAll()
+      .filter(d => !!d.deletedAt)
+      .sort((a, b) => new Date(b.deletedAt!).getTime() - new Date(a.deletedAt!).getTime());
+  },
+
+  restore(id: string) {
+    const docs = getAll();
+    const index = docs.findIndex((d) => d.id === id);
+    if (index === -1) return;
+    const { deletedAt, ...rest } = docs[index];
+    docs[index] = { ...rest, deletedAt: null } as PromptDocument;
+    saveAll(docs);
+  },
+
+  permanentDelete(id: string) {
     const docs = getAll().filter((d) => d.id !== id);
+    saveAll(docs);
+  },
+
+  emptyTrash() {
+    const docs = getAll().filter((d) => !d.deletedAt);
     saveAll(docs);
   },
 

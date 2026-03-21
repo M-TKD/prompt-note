@@ -19,6 +19,7 @@ import {
   User,
   ChevronRight,
   Settings,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
@@ -389,6 +390,16 @@ export default function ProfilePage() {
                 {user?.id}
               </span>
             </div>
+
+            {/* Trash */}
+            <Link
+              href="/trash"
+              className="flex items-center gap-3 p-4 bg-white dark:bg-[#141414] border border-[#f0f0f0] dark:border-[#333] rounded-xl"
+            >
+              <Trash2 className="w-4 h-4 text-[#9ca3af]" />
+              <span className="flex-1 text-sm text-[#1a1a1a] dark:text-white">ゴミ箱</span>
+              <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
+            </Link>
 
             {/* Settings */}
             <Link

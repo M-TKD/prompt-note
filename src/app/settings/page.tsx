@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, Upload } from "lucide-react";
+import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, Upload, FileText, Shield } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, signOut, loading } = useAuth();
@@ -215,6 +215,20 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2.5">
               <HelpCircle className="w-4 h-4 text-[#9ca3af]" />
               <span className="text-sm text-[#1a1a1a] dark:text-white">How it works</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
+          </Link>
+          <Link href="/terms" className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
+            <div className="flex items-center gap-2.5">
+              <FileText className="w-4 h-4 text-[#9ca3af]" />
+              <span className="text-sm text-[#1a1a1a] dark:text-white">利用規約</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
+          </Link>
+          <Link href="/privacy" className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
+            <div className="flex items-center gap-2.5">
+              <Shield className="w-4 h-4 text-[#9ca3af]" />
+              <span className="text-sm text-[#1a1a1a] dark:text-white">プライバシーポリシー</span>
             </div>
             <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
           </Link>
