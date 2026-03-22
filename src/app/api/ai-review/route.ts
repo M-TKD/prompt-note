@@ -102,9 +102,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Free tier with Gemini → check monthly limit
-    const geminiKey = process.env.GOOGLE_AI_API_KEY;
-    if (geminiKey) {
+    // 2. Free tier with Groq (Llama 3.3 70B) → check monthly limit
+    const groqKey = process.env.GROQ_API_KEY;
+    if (groqKey) {
       // Get user ID from access token
       let userId: string | null = null;
       if (accessToken) {
@@ -124,8 +124,8 @@ export async function POST(req: NextRequest) {
           }, { status: 429 });
         }
 
-        // Call Gemini and record usage
-        const result = await callGemini(geminiKey, bodyMd);
+        // Call Groq and record usage
+        const result = await callGroq(groqKey, bodyMd);
         if (result.status === 200) {
           await recordUsage(userId);
           // Add usage info to response
@@ -137,8 +137,8 @@ export async function POST(req: NextRequest) {
         }
         return result;
       } else {
-        // Not logged in → still allow with demo or limited
-        return await callGemini(geminiKey, bodyMd);
+        // Not logged in → demo response
+        return NextResponse.json(getDemoResponse());
       }
     }
 
@@ -157,46 +157,43 @@ export async function POST(req: NextRequest) {
 }
 
 // -----------------------------------------------
-// Gemini Flash (Google AI Studio - free tier)
+// Groq (Llama 3.3 70B - free tier)
 // -----------------------------------------------
-async function callGemini(apiKey: string, bodyMd: string) {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: SYSTEM_PROMPT }],
-        },
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: `以下のプロンプトを評価・改善してください:\n\n${bodyMd}` }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 2048,
-          responseMimeType: "application/json",
-        },
-      }),
-    }
-  );
+async function callGroq(apiKey: string, bodyMd: string) {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `以下のプロンプトを評価・改善してください:\n\n${bodyMd}` },
+      ],
+      max_tokens: 2048,
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    }),
+  });
 
   if (!response.ok) {
     const errText = await response.text();
-    console.error("Gemini API error:", errText);
+    console.error("Groq API error:", errText);
     if (response.status === 429) {
       return NextResponse.json({ error: "AI Review の利用制限に達しました。しばらくしてからお試しください。" }, { status: 429 });
+    }
+    if (response.status === 401) {
+      return NextResponse.json({ error: "サーバーのAPIキー設定に問題があります" }, { status: 502 });
     }
     return NextResponse.json({ error: "AI添削に失敗しました" }, { status: 502 });
   }
 
   const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = data.choices?.[0]?.message?.content;
   if (!text) {
-    console.error("Gemini: no text in response", JSON.stringify(data));
+    console.error("Groq: no text in response", JSON.stringify(data));
     return NextResponse.json({ error: "AIの応答を解析できませんでした" }, { status: 502 });
   }
   return parseAndReturn(text);
