@@ -15,10 +15,40 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://prompt-notes.ai";
+
 export const metadata: Metadata = {
-  title: "PromptNotes",
-  description: "プロンプトを保存し、磨き、共有する",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "PromptNotes — 書いて、磨いて、シェアしよう。",
+    template: "%s | PromptNotes",
+  },
+  description:
+    "AIプロンプトを保存・編集・共有できる無料サービス。テンプレートやAIレビュー機能で、あなたのプロンプトをもっと良くしよう。",
   manifest: "/manifest.json",
+  openGraph: {
+    type: "website",
+    siteName: "PromptNotes",
+    title: "PromptNotes — 書いて、磨いて、シェアしよう。",
+    description:
+      "AIプロンプトを保存・編集・共有できる無料サービス。テンプレートやAIレビュー機能で、あなたのプロンプトをもっと良くしよう。",
+    url: SITE_URL,
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: "PromptNotes",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PromptNotes — 書いて、磨いて、シェアしよう。",
+    description:
+      "AIプロンプトを保存・編集・共有できる無料サービス。テンプレートやAIレビュー機能で、あなたのプロンプトをもっと良くしよう。",
+    images: ["/api/og"],
+  },
 };
 
 export const viewport: Viewport = {

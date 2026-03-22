@@ -18,7 +18,7 @@ export default function TermsPage() {
 
       {/* Content */}
       <div className="max-w-lg mx-auto px-6 text-sm leading-relaxed text-[#404040] dark:text-[#9ca3af]">
-        <p className="text-[10px] font-mono text-[#9ca3af] mb-6">最終更新日: 2026年3月21日</p>
+        <p className="text-[10px] font-mono text-[#9ca3af] mb-6">最終更新日: 2026年3月23日</p>
 
         <p className="mb-4">
           本利用規約（以下「本規約」）は、PromptNotes（以下「本サービス」）の利用条件を定めるものです。本サービスをご利用いただく前に、本規約をよくお読みください。本サービスを利用することで、本規約に同意したものとみなされます。
@@ -26,7 +26,7 @@ export default function TermsPage() {
 
         <h2 className="font-bold text-base mb-2 mt-6 text-[#1a1a1a] dark:text-white">1. サービスの説明</h2>
         <p className="mb-4">
-          PromptNotesは、AIプロンプトの作成・保存・管理・共有を目的としたWebアプリケーションです。ユーザーはプロンプトをMarkdown形式で作成・編集し、タグ付けによる整理、他ユーザーへの公開、AI Reviewによるプロンプトの改善提案などの機能をご利用いただけます。
+          PromptNotes（https://prompt-notes.ai）は、AIプロンプトの作成・保存・管理・共有を目的としたWebアプリケーションです。ユーザーはプロンプトをMarkdown形式で作成・編集し、タグ付けによる整理、他ユーザーへの公開、AI Reviewによるプロンプトの改善提案などの機能をご利用いただけます。AI Review機能は、外部のAIプロバイダー（Groq、OpenAI、Anthropic）のAPIを利用してプロンプトの分析・改善提案を行います。
         </p>
 
         <h2 className="font-bold text-base mb-2 mt-6 text-[#1a1a1a] dark:text-white">2. アカウント</h2>
@@ -52,7 +52,7 @@ export default function TermsPage() {
         <h2 className="font-bold text-base mb-2 mt-6 text-[#1a1a1a] dark:text-white">5. 免責事項</h2>
         <ul className="list-disc list-inside mb-4 space-y-1">
           <li>本サービスは「現状のまま」提供されます。明示または黙示を問わず、いかなる保証も行いません。</li>
-          <li>AI Review機能による分析結果・改善提案の正確性、完全性、有用性について保証しません。AI Reviewの結果はあくまで参考情報としてご利用ください。</li>
+          <li>AI Review機能は外部AIプロバイダー（Groq、OpenAI、Anthropic）のAPIを利用しており、その分析結果・改善提案の正確性、完全性、有用性について保証しません。AI Reviewの結果はあくまで参考情報としてご利用ください。</li>
           <li>本サービスの利用によって生じたいかなる損害についても、運営者は責任を負いません。</li>
           <li>データの消失や破損について、運営者は責任を負いません。重要なデータはバックアップをお取りください。</li>
         </ul>

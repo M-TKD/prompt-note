@@ -3,17 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/use-store";
-import { supabase } from "@/lib/supabase";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
 import { Heart, GitFork, Copy, Check } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
-
-type AuthorProfile = {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-};
 
 export default function FeedPage() {
   const router = useRouter();
@@ -26,7 +19,6 @@ export default function FeedPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [authors, setAuthors] = useState<Record<string, AuthorProfile>>({});
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -34,20 +26,6 @@ export default function FeedPage() {
       hybridStore.ensureSeedData();
       const documents = await hybridStore.getPublicDocuments(sort, category);
       setDocs(documents);
-
-      // Batch-fetch author profiles
-      const userIds = [...new Set(documents.map((d) => d.userId).filter(Boolean))];
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, display_name, avatar_url")
-          .in("id", userIds);
-        if (profiles) {
-          const map: Record<string, AuthorProfile> = {};
-          profiles.forEach((p) => { map[p.id] = p; });
-          setAuthors(map);
-        }
-      }
 
       // Resolve liked state for all documents
       const liked = new Set<string>();
@@ -166,24 +144,24 @@ export default function FeedPage() {
               <p className="text-xs text-[#9ca3af] line-clamp-2 mb-2 leading-relaxed">{doc.bodyMd.replace(/\n/g, " ")}</p>
 
               {/* Author */}
-              {authors[doc.userId] && (
+              {doc.author && (
                 <button
                   onClick={(e) => { e.stopPropagation(); router.push(`/profile?userId=${doc.userId}`); }}
                   className="flex items-center gap-1.5 mb-2"
                 >
-                  {authors[doc.userId].avatar_url ? (
+                  {doc.author.avatarUrl ? (
                     <img
-                      src={authors[doc.userId].avatar_url!}
+                      src={doc.author.avatarUrl}
                       alt=""
-                      className="w-6 h-6 rounded-full object-cover"
+                      className="w-5 h-5 rounded-full object-cover ring-1 ring-[#e5e7eb] dark:ring-[#444]"
                     />
                   ) : (
-                    <span className="w-6 h-6 rounded-full bg-[#e5e7eb] dark:bg-[#333] flex items-center justify-center text-[10px] font-bold text-[#9ca3af]">
-                      {(authors[doc.userId].display_name || "?")[0].toUpperCase()}
+                    <span className="w-5 h-5 rounded-full bg-[#f3f4f6] dark:bg-[#2a2a2a] flex items-center justify-center text-[9px] font-bold text-[#9ca3af] dark:text-[#6b7280]">
+                      {doc.author.name[0].toUpperCase()}
                     </span>
                   )}
-                  <span className="text-xs text-[#9ca3af]">
-                    {authors[doc.userId].display_name || "Anonymous"}
+                  <span className="text-[11px] text-[#9ca3af] dark:text-[#6b7280] font-mono">
+                    {doc.author.name}
                   </span>
                 </button>
               )}
@@ -218,24 +196,24 @@ export default function FeedPage() {
             <h2 className="font-bold text-base tracking-tight mb-2 dark:text-white">{selected.title || "Prompt Detail"}</h2>
 
             {/* Author in modal */}
-            {authors[selected.userId] && (
+            {selected.author && (
               <button
                 onClick={() => { setSelected(null); router.push(`/profile?userId=${selected.userId}`); }}
                 className="flex items-center gap-1.5 mb-3"
               >
-                {authors[selected.userId].avatar_url ? (
+                {selected.author.avatarUrl ? (
                   <img
-                    src={authors[selected.userId].avatar_url!}
+                    src={selected.author.avatarUrl}
                     alt=""
-                    className="w-6 h-6 rounded-full object-cover"
+                    className="w-6 h-6 rounded-full object-cover ring-1 ring-[#e5e7eb] dark:ring-[#444]"
                   />
                 ) : (
-                  <span className="w-6 h-6 rounded-full bg-[#e5e7eb] dark:bg-[#333] flex items-center justify-center text-[10px] font-bold text-[#9ca3af]">
-                    {(authors[selected.userId].display_name || "?")[0].toUpperCase()}
+                  <span className="w-6 h-6 rounded-full bg-[#f3f4f6] dark:bg-[#2a2a2a] flex items-center justify-center text-[10px] font-bold text-[#9ca3af] dark:text-[#6b7280]">
+                    {selected.author.name[0].toUpperCase()}
                   </span>
                 )}
-                <span className="text-xs text-[#9ca3af]">
-                  {authors[selected.userId].display_name || "Anonymous"}
+                <span className="text-[11px] text-[#9ca3af] dark:text-[#6b7280] font-mono">
+                  {selected.author.name}
                 </span>
               </button>
             )}

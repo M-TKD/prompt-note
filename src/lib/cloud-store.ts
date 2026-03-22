@@ -64,7 +64,7 @@ export const cloudStore = {
   ): Promise<PromptDocument[]> {
     let query = supabase
       .from("documents")
-      .select("*")
+      .select("*, profiles:user_id(display_name, avatar_url)")
       .eq("visibility", "public")
       .neq("type", "note");
 
@@ -85,7 +85,17 @@ export const cloudStore = {
       console.error("getPublicDocuments error:", JSON.stringify(error));
       return [];
     }
-    return (data || []).map(toDocument);
+    return (data || []).map((row) => {
+      const doc = toDocument(row);
+      const profile = row.profiles as { display_name: string | null; avatar_url: string | null } | null;
+      if (profile) {
+        doc.author = {
+          name: profile.display_name || "Anonymous",
+          avatarUrl: profile.avatar_url || undefined,
+        };
+      }
+      return doc;
+    });
   },
 
   // -----------------------------------------------

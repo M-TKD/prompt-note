@@ -18,7 +18,7 @@ export default function PrivacyPage() {
 
       {/* Content */}
       <div className="max-w-lg mx-auto px-6 text-sm leading-relaxed text-[#404040] dark:text-[#9ca3af]">
-        <p className="text-[10px] font-mono text-[#9ca3af] mb-6">最終更新日: 2026年3月21日</p>
+        <p className="text-[10px] font-mono text-[#9ca3af] mb-6">最終更新日: 2026年3月23日</p>
 
         <p className="mb-4">
           本プライバシーポリシー（以下「本ポリシー」）は、PromptNotes（以下「本サービス」）におけるユーザー情報の取り扱いについて説明するものです。
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
         <ul className="list-disc list-inside mb-4 space-y-1">
           <li>ユーザーの個人情報を第三者に販売・提供することはありません。</li>
           <li>ユーザーが「公開」に設定したプロンプトは、他のユーザーに表示されます。</li>
-          <li>AI Review機能を使用する場合、プロンプトの内容がユーザーが設定したAIプロバイダー（OpenAI または Anthropic）のAPIに送信されます。APIキーはユーザー自身が管理し、サーバーには保存されません。</li>
+          <li>AI Review機能を使用する場合、プロンプトの内容がユーザーが設定したAIプロバイダー（Groq、OpenAI、またはAnthropic）のAPIに送信されます。各プロバイダーはそれぞれのプライバシーポリシーに従ってデータを処理します。APIキーはユーザー自身が管理し、サーバーには保存されません。</li>
           <li>法令に基づく開示要求があった場合、必要な範囲で情報を開示することがあります。</li>
         </ul>
 

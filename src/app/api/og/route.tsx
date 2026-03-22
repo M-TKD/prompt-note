@@ -170,7 +170,7 @@ export async function GET(req: NextRequest) {
               color: "#555555",
             }}
           >
-            promptnotes.app
+            prompt-notes.ai
           </span>
         </div>
       </div>

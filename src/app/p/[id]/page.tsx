@@ -67,14 +67,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = doc.bodyMd.slice(0, 160).replace(/\n/g, " ");
   const ogImageUrl = `/api/og?title=${encodeURIComponent(doc.title)}&type=${doc.type}${doc.author ? `&author=${encodeURIComponent(doc.author.name)}` : ""}`;
 
+  const siteUrl = "https://prompt-notes.ai";
+  const pageUrl = `${siteUrl}/p/${id}`;
+
   return {
-    title: `${doc.title} | PromptNotes`,
+    title: doc.title,
     description,
+    alternates: {
+      canonical: pageUrl,
+    },
     openGraph: {
       title: doc.title,
       description,
       type: "article",
-      images: [ogImageUrl],
+      url: pageUrl,
+      siteName: "PromptNotes",
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: doc.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
