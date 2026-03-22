@@ -6,13 +6,14 @@ import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
 import { useStore } from "@/lib/use-store";
 import { useAuth } from "@/lib/auth-context";
-import { DocumentType, DocumentVisibility, TYPE_CONFIG, AI_APPS, extractVariables, fillTemplate } from "@/lib/types";
+import { DocumentType, DocumentVisibility, DocumentVersion, TYPE_CONFIG, AI_APPS, extractVariables, fillTemplate } from "@/lib/types";
+import { UpgradeModal } from "@/components/UpgradeModal";
 import {
   ArrowLeft, Eye, Pencil, WandSparkles, Send, ArrowUpCircle,
   Bold, Italic, Code, List, ListOrdered, Heading1, Heading2,
   Quote, Minus, Link2, Copy, Check, Globe, Lock,
   ChevronRight, ThumbsUp, ThumbsDown, ExternalLink,
-  Share2, Download, Variable,
+  Share2, Download, Variable, History, RotateCcw, FolderPlus,
 } from "lucide-react";
 
 function EditorContent() {
@@ -35,9 +36,13 @@ function EditorContent() {
   const [showPromote, setShowPromote] = useState(false);
   const [showAIReview, setShowAIReview] = useState(false);
   const [showVariables, setShowVariables] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showCollectionSheet, setShowCollectionSheet] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [aiUsage, setAiUsage] = useState<{ used: number; limit: number } | null>(null);
 
   // Load existing doc or restore draft
   useEffect(() => {
@@ -110,6 +115,8 @@ function EditorContent() {
         tags,
       };
       if (editId) {
+        // Save version snapshot before updating (cloud only)
+        await hybridStore.saveVersion(editId, title || null, bodyMd);
         await hybridStore.update(editId, data);
       } else {
         const created = await hybridStore.create(data);
@@ -374,11 +381,24 @@ function EditorContent() {
 
         <div className="flex-1" />
 
+        {/* Version History */}
+        {editId && hybridStore.isCloud && (
+          <button onClick={() => setShowVersionHistory(true)} className="text-[11px] flex items-center gap-1 text-[#9ca3af] font-mono">
+            <History className="w-3 h-3" />
+            履歴
+          </button>
+        )}
+
         {/* AI Review */}
         {hasContent && (
           <button onClick={() => setShowAIReview(true)} className="text-[11px] flex items-center gap-1 text-[#6b7280] font-mono">
             <WandSparkles className="w-3 h-3" />
             AI Review
+            {aiUsage && aiUsage.limit > 0 && (
+              <span className="text-[9px] text-[#9ca3af] ml-0.5">
+                残り {aiUsage.limit - aiUsage.used}/{aiUsage.limit} 回
+              </span>
+            )}
           </button>
         )}
 
@@ -393,6 +413,13 @@ function EditorContent() {
         {hasContent && (
           <button onClick={handleExport} className="text-[#9ca3af] hover:text-[#6b7280]">
             <Download className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Add to Collection */}
+        {hasContent && editId && (
+          <button onClick={() => setShowCollectionSheet(true)} className="text-[#9ca3af] hover:text-[#4F46E5]">
+            <FolderPlus className="w-3.5 h-3.5" />
           </button>
         )}
 
@@ -413,8 +440,136 @@ function EditorContent() {
         />
       )}
       {showSendToAI && <SendToAISheet promptText={bodyMd} onClose={() => setShowSendToAI(false)} />}
-      {showAIReview && <AIReviewSheet bodyMd={bodyMd} onApply={(s) => { setBodyMd(s); setShowAIReview(false); }} onClose={() => setShowAIReview(false)} />}
+      {showAIReview && <AIReviewSheet bodyMd={bodyMd} onApply={(s) => { setBodyMd(s); setShowAIReview(false); }} onClose={() => setShowAIReview(false)} onUsageUpdate={setAiUsage} onLimitReached={() => { setShowAIReview(false); setShowUpgradeModal(true); }} />}
+      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
       {showVariables && <VariablesSheet bodyMd={bodyMd} onFill={(filled) => { setBodyMd(filled); setShowVariables(false); }} onClose={() => setShowVariables(false)} />}
+      {showVersionHistory && editId && (
+        <VersionHistorySheet
+          documentId={editId}
+          onRestore={(v) => {
+            setTitle(v.title || "");
+            setBodyMd(v.bodyMd);
+            setShowVersionHistory(false);
+            toast("バージョンを復元しました");
+          }}
+          onClose={() => setShowVersionHistory(false)}
+        />
+      )}
+      {showCollectionSheet && editId && <CollectionSheet documentId={editId} onClose={() => setShowCollectionSheet(false)} />}
+    </div>
+  );
+}
+
+// --- Collection Sheet ---
+function CollectionSheet({ documentId, onClose }: { documentId: string; onClose: () => void }) {
+  const hybridStore = useStore();
+  const { toast } = useToast();
+  const [collections, setCollections] = useState<{ id: string; name: string; emoji: string | null }[]>([]);
+  const [memberIds, setMemberIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      const [cols, docCols] = await Promise.all([
+        hybridStore.getCollections(),
+        hybridStore.getDocumentCollections(documentId),
+      ]);
+      setCollections(cols.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji })));
+      setMemberIds(docCols);
+      setLoading(false);
+    };
+    load();
+  }, [hybridStore, documentId]);
+
+  const toggle = async (colId: string) => {
+    if (memberIds.includes(colId)) {
+      const ok = await hybridStore.removeFromCollection(colId, documentId);
+      if (ok) {
+        setMemberIds((prev) => prev.filter((id) => id !== colId));
+        toast("コレクションから削除しました");
+      }
+    } else {
+      const ok = await hybridStore.addToCollection(colId, documentId);
+      if (ok) {
+        setMemberIds((prev) => [...prev, colId]);
+        toast("コレクションに追加しました");
+      }
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    setCreating(true);
+    const col = await hybridStore.createCollection(newName.trim());
+    if (col) {
+      setCollections((prev) => [...prev, { id: col.id, name: col.name, emoji: col.emoji }]);
+      await hybridStore.addToCollection(col.id, documentId);
+      setMemberIds((prev) => [...prev, col.id]);
+      setNewName("");
+      toast("コレクションを作成して追加しました");
+    }
+    setCreating(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
+      <div
+        className="w-full max-w-lg bg-white dark:bg-[#1a1a1a] rounded-t-2xl p-5 pb-10 max-h-[70vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-[#1a1a1a] dark:text-white">コレクションに追加</h3>
+          <button onClick={onClose} className="text-[#9ca3af] text-xs">閉じる</button>
+        </div>
+
+        {loading ? (
+          <div className="py-8 text-center text-xs text-[#9ca3af]">読み込み中...</div>
+        ) : (
+          <>
+            {collections.length === 0 && (
+              <p className="text-xs text-[#9ca3af] mb-4">コレクションがありません。下のフォームから作成できます。</p>
+            )}
+            <div className="space-y-1 mb-4">
+              {collections.map((col) => {
+                const isMember = memberIds.includes(col.id);
+                return (
+                  <button
+                    key={col.id}
+                    onClick={() => toggle(col.id)}
+                    className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-[#222] text-left"
+                  >
+                    <span className="text-base w-5 text-center">{col.emoji || "\uD83D\uDCC1"}</span>
+                    <span className="flex-1 text-sm text-[#1a1a1a] dark:text-white">{col.name}</span>
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isMember ? "bg-[#4F46E5] border-[#4F46E5]" : "border-[#d1d5db] dark:border-[#555]"}`}>
+                      {isMember && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2 border-t border-[#f0f0f0] dark:border-[#333] pt-3">
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="新しいコレクション名"
+                className="flex-1 text-sm bg-transparent border border-[#f0f0f0] dark:border-[#333] rounded-lg px-3 py-2 text-[#1a1a1a] dark:text-white placeholder-[#d1d5db] outline-none focus:border-[#4F46E5]"
+                onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); }}
+              />
+              <button
+                onClick={handleCreate}
+                disabled={!newName.trim() || creating}
+                className="text-xs text-white bg-[#4F46E5] px-3 py-2 rounded-lg disabled:opacity-40"
+              >
+                作成
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -550,7 +705,7 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
 }
 
 // --- AI Review Sheet ---
-function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: (suggestion: string) => void; onClose: () => void }) {
+function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached }: { bodyMd: string; onApply: (suggestion: string) => void; onClose: () => void; onUsageUpdate?: (usage: { used: number; limit: number }) => void; onLimitReached?: () => void }) {
   const { toast } = useToast();
   const { session } = useAuth();
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -580,7 +735,13 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
         const errData = await res.json().catch(() => ({}));
         if (errData.error === "free_limit_reached") {
           setIsLimitReached(true);
-          setUsage({ used: errData.usage, limit: errData.limit });
+          const u = { used: errData.usage, limit: errData.limit };
+          setUsage(u);
+          onUsageUpdate?.(u);
+          if (onLimitReached) {
+            onLimitReached();
+            return;
+          }
           setState("error");
           setErrorMsg(errData.message);
           return;
@@ -592,7 +753,10 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
       setScores(data.scores);
       setOverall(data.overall);
       setSuggestion(data.suggestionMd);
-      if (data._usage) setUsage(data._usage);
+      if (data._usage) {
+        setUsage(data._usage);
+        onUsageUpdate?.(data._usage);
+      }
       setState("done");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Review failed");
@@ -669,6 +833,142 @@ function AIReviewSheet({ bodyMd, onApply, onClose }: { bodyMd: string; onApply: 
           </div>
         )}
         <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
+      </div>
+    </div>
+  );
+}
+
+// --- Version History Sheet ---
+function VersionHistorySheet({
+  documentId,
+  onRestore,
+  onClose,
+}: {
+  documentId: string;
+  onRestore: (version: DocumentVersion) => void;
+  onClose: () => void;
+}) {
+  const hybridStore = useStore();
+  const { toast } = useToast();
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedVersion, setSelectedVersion] = useState<DocumentVersion | null>(null);
+  const [restoring, setRestoring] = useState(false);
+
+  useEffect(() => {
+    hybridStore.getVersions(documentId).then((v) => {
+      setVersions(v);
+      setLoading(false);
+    });
+  }, [documentId, hybridStore]);
+
+  const handleRestore = async (version: DocumentVersion) => {
+    setRestoring(true);
+    const success = await hybridStore.restoreVersion(documentId, version.id);
+    if (success) {
+      onRestore(version);
+    } else {
+      toast("復元に失敗しました", "error");
+    }
+    setRestoring(false);
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    const hours = d.getHours().toString().padStart(2, "0");
+    const minutes = d.getMinutes().toString().padStart(2, "0");
+    return `${month}/${day} ${hours}:${minutes}`;
+  };
+
+  const getPreview = (bodyMd: string) => {
+    const firstLine = bodyMd.split("\n").find((l) => l.trim()) || "";
+    return firstLine.replace(/^#+\s*/, "").slice(0, 60);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 max-h-[80vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
+        <h2 className="font-bold text-base text-center tracking-tight dark:text-white">履歴</h2>
+        <p className="text-[11px] text-[#9ca3af] text-center font-mono mb-4">Version History</p>
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin w-5 h-5 border-2 border-[#1a1a1a] dark:border-white border-t-transparent rounded-full mx-auto mb-3" />
+            <p className="text-[#9ca3af] text-xs font-mono">読み込み中...</p>
+          </div>
+        ) : versions.length === 0 ? (
+          <div className="text-center py-12">
+            <History className="w-8 h-8 text-[#e5e7eb] dark:text-[#444] mx-auto mb-3" />
+            <p className="text-[#9ca3af] text-xs font-mono">バージョン履歴はまだありません</p>
+            <p className="text-[#d1d5db] text-[10px] font-mono mt-1">保存するたびに履歴が作成されます</p>
+          </div>
+        ) : selectedVersion ? (
+          <div className="space-y-3">
+            <button
+              onClick={() => setSelectedVersion(null)}
+              className="text-[11px] text-[#9ca3af] font-mono flex items-center gap-1"
+            >
+              <ArrowLeft className="w-3 h-3" /> 一覧に戻る
+            </button>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-mono text-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/20 px-2 py-0.5 rounded">
+                  v{selectedVersion.versionNumber}
+                </span>
+                <span className="text-[10px] text-[#9ca3af] font-mono ml-2">
+                  {formatDate(selectedVersion.createdAt)}
+                </span>
+              </div>
+            </div>
+            {selectedVersion.title && (
+              <p className="text-sm font-medium text-[#1a1a1a] dark:text-white">{selectedVersion.title}</p>
+            )}
+            <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4 max-h-[40vh] overflow-auto">
+              <pre className="text-xs font-mono text-[#404040] dark:text-[#e5e7eb] whitespace-pre-wrap leading-relaxed">
+                {selectedVersion.bodyMd}
+              </pre>
+            </div>
+            <button
+              onClick={() => handleRestore(selectedVersion)}
+              disabled={restoring}
+              className="w-full py-3 bg-[#4F46E5] text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <RotateCcw className="w-4 h-4" />
+              {restoring ? "復元中..." : "この版に戻す"}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {versions.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => setSelectedVersion(v)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444] text-left"
+              >
+                <span className="text-[10px] font-mono text-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/20 px-2 py-0.5 rounded min-w-[36px] text-center">
+                  v{v.versionNumber}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-[#1a1a1a] dark:text-white truncate">
+                    {getPreview(v.bodyMd) || "（空）"}
+                  </p>
+                  <p className="text-[10px] text-[#9ca3af] font-mono">{formatDate(v.createdAt)}</p>
+                </div>
+                <ChevronRight className="w-3 h-3 text-[#d1d5db] flex-shrink-0" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">
+          Close
+        </button>
       </div>
     </div>
   );

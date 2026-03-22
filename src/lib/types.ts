@@ -26,6 +26,28 @@ export interface TemplateVariable {
   defaultValue?: string;
 }
 
+export interface DocumentVersion {
+  id: string;
+  documentId: string;
+  userId: string;
+  title: string | null;
+  bodyMd: string;
+  versionNumber: number;
+  createdAt: string;
+}
+
+export interface Collection {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  emoji: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  documentCount?: number;
+}
+
 export interface AIScores {
   clarity: { grade: string; feedback: string };
   specificity: { grade: string; feedback: string };

@@ -8,7 +8,7 @@
 
 import { store } from "./store";
 import { cloudStore } from "./cloud-store";
-import { PromptDocument } from "./types";
+import { PromptDocument, Collection, DocumentVersion } from "./types";
 
 export function createHybridStore(userId: string | null) {
   const isCloud = !!userId;
@@ -177,5 +177,105 @@ export function createHybridStore(userId: string | null) {
     // シードデータ（localStorageのみ）
     // -----------------------------------------------
     ensureSeedData: store.ensureSeedData,
+
+    // -----------------------------------------------
+    // コレクション（クラウド専用）
+    // -----------------------------------------------
+    async getCollections(): Promise<Collection[]> {
+      if (isCloud) {
+        return cloudStore.getCollections(userId!);
+      }
+      return [];
+    },
+
+    async createCollection(name: string, emoji?: string): Promise<Collection | null> {
+      if (isCloud) {
+        return cloudStore.createCollection(userId!, name, emoji);
+      }
+      return null;
+    },
+
+    async updateCollection(id: string, updates: { name?: string; emoji?: string; description?: string }): Promise<boolean> {
+      if (isCloud) {
+        return cloudStore.updateCollection(id, updates);
+      }
+      return false;
+    },
+
+    async deleteCollection(id: string): Promise<boolean> {
+      if (isCloud) {
+        return cloudStore.deleteCollection(id);
+      }
+      return false;
+    },
+
+    async addToCollection(collectionId: string, documentId: string): Promise<boolean> {
+      if (isCloud) {
+        return cloudStore.addToCollection(collectionId, documentId);
+      }
+      return false;
+    },
+
+    async removeFromCollection(collectionId: string, documentId: string): Promise<boolean> {
+      if (isCloud) {
+        return cloudStore.removeFromCollection(collectionId, documentId);
+      }
+      return false;
+    },
+
+    async getCollectionDocuments(collectionId: string): Promise<PromptDocument[]> {
+      if (isCloud) {
+        return cloudStore.getCollectionDocuments(collectionId);
+      }
+      return [];
+    },
+
+    async getDocumentCollections(documentId: string): Promise<string[]> {
+      if (isCloud) {
+        return cloudStore.getDocumentCollections(documentId);
+      }
+      return [];
+    },
+
+    // -----------------------------------------------
+    // バージョン履歴（クラウド専用）
+    // -----------------------------------------------
+    async saveVersion(documentId: string, title: string | null, bodyMd: string): Promise<DocumentVersion | null> {
+      if (isCloud) {
+        return cloudStore.saveVersion(userId!, documentId, title, bodyMd);
+      }
+      return null;
+    },
+
+    async getVersions(documentId: string): Promise<DocumentVersion[]> {
+      if (isCloud) {
+        return cloudStore.getVersions(documentId);
+      }
+      return [];
+    },
+
+    async getVersion(versionId: string): Promise<DocumentVersion | null> {
+      if (isCloud) {
+        return cloudStore.getVersion(versionId);
+      }
+      return null;
+    },
+
+    async restoreVersion(documentId: string, versionId: string): Promise<boolean> {
+      if (isCloud) {
+        return cloudStore.restoreVersion(documentId, versionId);
+      }
+      return false;
+    },
+
+    // -----------------------------------------------
+    // 全データ削除（クラウド）
+    // -----------------------------------------------
+    async deleteAllDocuments(): Promise<boolean> {
+      if (isCloud) {
+        return cloudStore.deleteAllDocuments(userId!);
+      }
+      return false;
+    },
   };
 }

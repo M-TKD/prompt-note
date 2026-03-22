@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Sparkles, Share2, Zap, PenLine, Brain, Users, ArrowRight, Check } from "lucide-react";
 
 export default function LandingPage() {
@@ -206,21 +207,21 @@ export default function LandingPage() {
           <p className="text-xs text-[#9ca3af] mb-12 max-w-md mx-auto">
             書いたプロンプトをそのままAIに送信。コピー＆ペーストはもう不要。
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
             {[
-              { name: "ChatGPT", color: "#10a37f", logo: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#10a37f"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg> },
-              { name: "Claude", color: "#d97706", logo: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#d97706"><path d="M4.709 15.955l4.72-2.756.08-.046 2.904-1.696L17.122 8.7l1.168-.682.065-.038.065-.038.347-.203a.464.464 0 0 0 .226-.399V3.87a.464.464 0 0 0-.697-.402l-.347.203-.065.038-.065.038-1.168.682-4.709 2.751-.08.047-2.904 1.695-4.709 2.752-1.168.682-.065.038-.065.038-.347.202a.464.464 0 0 0-.226.4v3.47a.464.464 0 0 0 .697.402l.347-.203.065-.038.065-.038 1.168-.682z"/><path d="M4.709 22.408l4.72-2.756.08-.047 2.904-1.695 4.709-2.757 1.168-.682.065-.038.065-.037.347-.203a.464.464 0 0 0 .226-.4v-3.47a.464.464 0 0 0-.697-.401l-.347.203-.065.037-.065.038-1.168.682-4.709 2.757-.08.046-2.904 1.696-4.709 2.751-1.168.682-.065.038-.065.038-.347.203a.464.464 0 0 0-.226.4v3.47a.464.464 0 0 0 .697.401l.347-.203.065-.037.065-.038 1.168-.682z"/></svg> },
-              { name: "Gemini", color: "#4285f4", logo: <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M12 0C5.352 0 0 5.352 0 12s5.352 12 12 12 12-5.352 12-12S18.648 0 12 0z" fill="#4285f4"/><path d="M12 4.8c3.6 0 6.6 2.4 7.2 5.7H4.8c.6-3.3 3.6-5.7 7.2-5.7z" fill="#fff" opacity=".4"/><path d="M12 19.2c-3.6 0-6.6-2.4-7.2-5.7h14.4c-.6 3.3-3.6 5.7-7.2 5.7z" fill="#fff" opacity=".4"/></svg> },
-              { name: "Copilot", color: "#7c3aed", logo: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#7c3aed"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 3a3 3 0 0 1 3 3v1.5a1.5 1.5 0 0 1-3 0V8a1.5 1.5 0 0 0-3 0v1.5a1.5 1.5 0 0 1-3 0V8a3 3 0 0 1 3-3h3zm-5 8h10v1c0 2.76-2.24 5-5 5s-5-2.24-5-5v-1z"/></svg> },
-              { name: "Perplexity", color: "#20808d", logo: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#20808d"><path d="M12 1L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-4zm0 2.18l6 3v5.28c0 4.52-3.13 8.72-6 9.84-2.87-1.12-6-5.32-6-9.84V6.18l6-3zM11 7v6h2V7h-2zm0 8v2h2v-2h-2z"/></svg> },
-              { name: "Grok", color: "#1a1a1a", logo: <svg className="w-5 h-5 text-[#1a1a1a] dark:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
+              { name: "ChatGPT", logo: <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#10a37f"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg> },
+              { name: "Claude", logo: <Image src="/logos/claude.png" alt="Claude" width={24} height={24} className="rounded" /> },
+              { name: "Gemini", logo: <Image src="/logos/gemini.jpg" alt="Gemini" width={24} height={24} className="rounded" /> },
+              { name: "Copilot", logo: <Image src="/logos/copilot.png" alt="Copilot" width={24} height={24} className="rounded" /> },
+              { name: "Perplexity", logo: <Image src="/logos/perplexity.webp" alt="Perplexity" width={24} height={24} className="rounded" /> },
+              { name: "Grok", logo: <svg className="w-6 h-6 text-[#1a1a1a] dark:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
             ].map((ai) => (
               <div
                 key={ai.name}
-                className="flex items-center gap-2.5 px-5 py-3 rounded-xl border border-[#e5e7eb] dark:border-[#333] bg-[#fafafa] dark:bg-[#111] hover:border-[#d1d5db] dark:hover:border-[#444] transition-colors"
+                className="flex items-center gap-3 px-5 py-3.5 rounded-xl border border-[#e5e7eb] dark:border-[#333] bg-[#fafafa] dark:bg-[#111] hover:border-[#d1d5db] dark:hover:border-[#444] transition-colors"
               >
-                {ai.logo}
-                <span className="text-xs font-medium text-[#404040] dark:text-[#e5e7eb]">{ai.name}</span>
+                <div className="w-6 h-6 flex items-center justify-center shrink-0">{ai.logo}</div>
+                <span className="text-sm font-medium text-[#404040] dark:text-[#e5e7eb]">{ai.name}</span>
               </div>
             ))}
           </div>

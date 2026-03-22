@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Settings,
   Trash2,
+  FolderOpen,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
@@ -390,6 +391,16 @@ export default function ProfilePage() {
                 {user?.id}
               </span>
             </div>
+
+            {/* Collections */}
+            <Link
+              href="/collections"
+              className="flex items-center gap-3 p-4 bg-white dark:bg-[#141414] border border-[#f0f0f0] dark:border-[#333] rounded-xl"
+            >
+              <FolderOpen className="w-4 h-4 text-[#4F46E5]" />
+              <span className="flex-1 text-sm text-[#1a1a1a] dark:text-white">コレクション</span>
+              <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
+            </Link>
 
             {/* Trash */}
             <Link

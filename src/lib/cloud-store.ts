@@ -1,5 +1,18 @@
 import { supabase } from "./supabase";
-import { PromptDocument, TemplateVariable } from "./types";
+import { PromptDocument, TemplateVariable, Collection, DocumentVersion } from "./types";
+
+// SupabaseのDB行 → DocumentVersion型に変換
+function toVersion(row: Record<string, unknown>): DocumentVersion {
+  return {
+    id: row.id as string,
+    documentId: row.document_id as string,
+    userId: row.user_id as string,
+    title: row.title as string | null,
+    bodyMd: row.body_md as string,
+    versionNumber: row.version_number as number,
+    createdAt: row.created_at as string,
+  };
+}
 
 // SupabaseのDB行 → アプリのPromptDocument型に変換
 function toDocument(row: Record<string, unknown>): PromptDocument {
@@ -429,5 +442,263 @@ export const cloudStore = {
       .single();
     if (error) console.error("updateProfile error:", error);
     return data;
+  },
+
+  // -----------------------------------------------
+  // コレクション一覧
+  // -----------------------------------------------
+  async getCollections(userId: string): Promise<Collection[]> {
+    const { data, error } = await supabase
+      .from("collections")
+      .select("*, collection_items(count)")
+      .eq("user_id", userId)
+      .order("sort_order", { ascending: true });
+
+    if (error) {
+      console.error("getCollections error:", JSON.stringify(error));
+      return [];
+    }
+    return (data || []).map((row) => ({
+      id: row.id as string,
+      userId: row.user_id as string,
+      name: row.name as string,
+      description: row.description as string | null,
+      emoji: row.emoji as string | null,
+      sortOrder: row.sort_order as number,
+      createdAt: row.created_at as string,
+      updatedAt: row.updated_at as string,
+      documentCount: ((row.collection_items as { count: number }[])?.[0]?.count) || 0,
+    }));
+  },
+
+  // -----------------------------------------------
+  // コレクション作成
+  // -----------------------------------------------
+  async createCollection(userId: string, name: string, emoji?: string): Promise<Collection | null> {
+    const { data, error } = await supabase
+      .from("collections")
+      .insert({
+        user_id: userId,
+        name,
+        emoji: emoji || null,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("createCollection error:", JSON.stringify(error));
+      return null;
+    }
+    return {
+      id: data.id,
+      userId: data.user_id,
+      name: data.name,
+      description: data.description,
+      emoji: data.emoji,
+      sortOrder: data.sort_order,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      documentCount: 0,
+    };
+  },
+
+  // -----------------------------------------------
+  // コレクション更新
+  // -----------------------------------------------
+  async updateCollection(id: string, updates: { name?: string; emoji?: string; description?: string }): Promise<boolean> {
+    const { error } = await supabase
+      .from("collections")
+      .update(updates)
+      .eq("id", id);
+    if (error) {
+      console.error("updateCollection error:", JSON.stringify(error));
+      return false;
+    }
+    return true;
+  },
+
+  // -----------------------------------------------
+  // コレクション削除
+  // -----------------------------------------------
+  async deleteCollection(id: string): Promise<boolean> {
+    const { error } = await supabase
+      .from("collections")
+      .delete()
+      .eq("id", id);
+    if (error) {
+      console.error("deleteCollection error:", JSON.stringify(error));
+      return false;
+    }
+    return true;
+  },
+
+  // -----------------------------------------------
+  // コレクションにドキュメント追加
+  // -----------------------------------------------
+  async addToCollection(collectionId: string, documentId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from("collection_items")
+      .insert({ collection_id: collectionId, document_id: documentId });
+    if (error) {
+      console.error("addToCollection error:", JSON.stringify(error));
+      return false;
+    }
+    return true;
+  },
+
+  // -----------------------------------------------
+  // コレクションからドキュメント削除
+  // -----------------------------------------------
+  async removeFromCollection(collectionId: string, documentId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from("collection_items")
+      .delete()
+      .eq("collection_id", collectionId)
+      .eq("document_id", documentId);
+    if (error) {
+      console.error("removeFromCollection error:", JSON.stringify(error));
+      return false;
+    }
+    return true;
+  },
+
+  // -----------------------------------------------
+  // コレクション内のドキュメント取得
+  // -----------------------------------------------
+  async getCollectionDocuments(collectionId: string): Promise<PromptDocument[]> {
+    const { data, error } = await supabase
+      .from("collection_items")
+      .select("document_id, documents(*)")
+      .eq("collection_id", collectionId)
+      .order("added_at", { ascending: false });
+
+    if (error) {
+      console.error("getCollectionDocuments error:", JSON.stringify(error));
+      return [];
+    }
+    return (data || [])
+      .filter((row) => row.documents)
+      .map((row) => toDocument(row.documents as unknown as Record<string, unknown>));
+  },
+
+  // -----------------------------------------------
+  // ドキュメントが属するコレクション一覧
+  // -----------------------------------------------
+  async getDocumentCollections(documentId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from("collection_items")
+      .select("collection_id")
+      .eq("document_id", documentId);
+    if (error) {
+      console.error("getDocumentCollections error:", JSON.stringify(error));
+      return [];
+    }
+    return (data || []).map((row) => row.collection_id as string);
+  },
+
+  // -----------------------------------------------
+  // バージョン保存
+  // -----------------------------------------------
+  async saveVersion(
+    userId: string,
+    documentId: string,
+    title: string | null,
+    bodyMd: string
+  ): Promise<DocumentVersion | null> {
+    // 現在の最大version_numberを取得
+    const { data: maxData } = await supabase
+      .from("document_versions")
+      .select("version_number")
+      .eq("document_id", documentId)
+      .order("version_number", { ascending: false })
+      .limit(1);
+
+    const nextVersion = (maxData && maxData.length > 0 ? (maxData[0].version_number as number) : 0) + 1;
+
+    const { data, error } = await supabase
+      .from("document_versions")
+      .insert({
+        document_id: documentId,
+        user_id: userId,
+        title,
+        body_md: bodyMd,
+        version_number: nextVersion,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("saveVersion error:", JSON.stringify(error));
+      return null;
+    }
+    return toVersion(data);
+  },
+
+  // -----------------------------------------------
+  // バージョン一覧取得
+  // -----------------------------------------------
+  async getVersions(documentId: string): Promise<DocumentVersion[]> {
+    const { data, error } = await supabase
+      .from("document_versions")
+      .select("*")
+      .eq("document_id", documentId)
+      .order("version_number", { ascending: false });
+
+    if (error) {
+      console.error("getVersions error:", JSON.stringify(error));
+      return [];
+    }
+    return (data || []).map(toVersion);
+  },
+
+  // -----------------------------------------------
+  // バージョン1件取得
+  // -----------------------------------------------
+  async getVersion(versionId: string): Promise<DocumentVersion | null> {
+    const { data, error } = await supabase
+      .from("document_versions")
+      .select("*")
+      .eq("id", versionId)
+      .single();
+
+    if (error || !data) return null;
+    return toVersion(data);
+  },
+
+  // -----------------------------------------------
+  // バージョン復元（ドキュメントの内容を上書き）
+  // -----------------------------------------------
+  async restoreVersion(documentId: string, versionId: string): Promise<boolean> {
+    const version = await this.getVersion(versionId);
+    if (!version) return false;
+
+    const { error } = await supabase
+      .from("documents")
+      .update({
+        title: version.title,
+        body_md: version.bodyMd,
+      })
+      .eq("id", documentId);
+
+    if (error) {
+      console.error("restoreVersion error:", JSON.stringify(error));
+      return false;
+    }
+    return true;
+  },
+
+  // -----------------------------------------------
+  // 全ドキュメント削除（クラウドデータクリア）
+  // -----------------------------------------------
+  async deleteAllDocuments(userId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from("documents")
+      .delete()
+      .eq("user_id", userId);
+    if (error) {
+      console.error("deleteAllDocuments error:", JSON.stringify(error));
+      return false;
+    }
+    return true;
   },
 };
