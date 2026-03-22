@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PromptDocument, TYPE_CONFIG, DocumentType } from "@/lib/types";
 import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check, ArrowRight } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import LandingPage from "@/components/LandingPage";
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
@@ -93,6 +94,11 @@ export default function HomePage() {
     // Reset input
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  // Show landing page for non-logged-in users
+  if (!authLoading && !user) {
+    return <LandingPage />;
+  }
 
   return (
     <div className="px-6 pt-14">
