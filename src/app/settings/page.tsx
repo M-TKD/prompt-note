@@ -3,18 +3,24 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, Upload, FileText, Shield } from "lucide-react";
+import { useStore } from "@/lib/use-store";
+import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, FileText, Shield, Cloud, HardDrive, AlertTriangle, Upload, Download } from "lucide-react";
 
 export default function SettingsPage() {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut } = useAuth();
+  const hybridStore = useStore();
   const [darkMode, setDarkMode] = useState(false);
   const [exportDone, setExportDone] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [importDone, setImportDone] = useState(false);
+  const [importing, setImporting] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const [aiProvider, setAiProvider] = useState<"openai" | "anthropic">("openai");
   const [aiApiKey, setAiApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [keySaved, setKeySaved] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("promptnote_darkmode");
@@ -41,45 +47,87 @@ export default function SettingsPage() {
     }
   };
 
-  const exportAll = () => {
-    const raw = localStorage.getItem("promptnote_documents");
-    if (!raw) return;
-    const blob = new Blob([raw], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `promptnote-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setExportDone(true);
-    setTimeout(() => setExportDone(false), 2000);
+  const exportAll = async () => {
+    setExporting(true);
+    try {
+      const docs = await hybridStore.getDocuments();
+      if (!docs || docs.length === 0) {
+        setExporting(false);
+        return;
+      }
+      const blob = new Blob([JSON.stringify(docs, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `promptnote-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportDone(true);
+      setTimeout(() => setExportDone(false), 2000);
+    } catch {
+      alert("エクスポートに失敗しました");
+    }
+    setExporting(false);
   };
 
   const importBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setImporting(true);
     try {
       const text = await file.text();
       const data = JSON.parse(text);
       if (Array.isArray(data)) {
-        const existing = localStorage.getItem("promptnote_documents");
-        const existingDocs = existing ? JSON.parse(existing) : [];
-        const existingIds = new Set(existingDocs.map((d: { id: string }) => d.id));
-        const newDocs = data.filter((d: { id: string }) => !existingIds.has(d.id));
-        localStorage.setItem("promptnote_documents", JSON.stringify([...existingDocs, ...newDocs]));
-        setImportDone(true);
-        setTimeout(() => setImportDone(false), 2000);
+        if (hybridStore.isCloud) {
+          // Import to cloud
+          let imported = 0;
+          for (const doc of data) {
+            await hybridStore.create({
+              userId: "local",
+              title: doc.title || null,
+              bodyMd: doc.bodyMd || "",
+              type: doc.type || "note",
+              visibility: doc.visibility || "private",
+              tags: doc.tags || [],
+              variables: doc.variables,
+              forkedFromId: doc.forkedFromId,
+            });
+            imported++;
+          }
+          if (imported > 0) {
+            setImportDone(true);
+            setTimeout(() => setImportDone(false), 2000);
+          }
+        } else {
+          // Import to localStorage
+          const existing = localStorage.getItem("promptnote_documents");
+          const existingDocs = existing ? JSON.parse(existing) : [];
+          const existingIds = new Set(existingDocs.map((d: { id: string }) => d.id));
+          const newDocs = data.filter((d: { id: string }) => !existingIds.has(d.id));
+          localStorage.setItem("promptnote_documents", JSON.stringify([...existingDocs, ...newDocs]));
+          setImportDone(true);
+          setTimeout(() => setImportDone(false), 2000);
+        }
       }
     } catch {
       alert("ファイルの形式が正しくありません");
     }
+    setImporting(false);
     if (importRef.current) importRef.current.value = "";
   };
 
-  const clearAllData = () => {
-    if (confirm("すべてのデータを削除しますか？この操作は取り消せません。")) {
+  const clearAllData = async () => {
+    setClearing(true);
+    try {
+      if (hybridStore.isCloud) {
+        await hybridStore.deleteAllDocuments();
+      }
       localStorage.clear();
       window.location.reload();
+    } catch {
+      alert("データの削除に失敗しました");
+      setClearing(false);
+      setShowClearConfirm(false);
     }
   };
 
@@ -116,6 +164,23 @@ export default function SettingsPage() {
             <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
           </Link>
         )}
+      </section>
+
+      {/* Storage indicator */}
+      <section className="mb-8">
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#f0f0f0] dark:border-[#333] bg-[#fafafa] dark:bg-[#222]">
+          {hybridStore.isCloud ? (
+            <>
+              <Cloud className="w-4 h-4 text-[#4F46E5]" />
+              <span className="text-xs text-[#4F46E5] font-mono">クラウド保存中</span>
+            </>
+          ) : (
+            <>
+              <HardDrive className="w-4 h-4 text-[#9ca3af]" />
+              <span className="text-xs text-[#9ca3af] font-mono">ローカル保存中</span>
+            </>
+          )}
+        </div>
       </section>
 
       {/* Appearance */}
@@ -185,7 +250,7 @@ export default function SettingsPage() {
                 }}
                 className="text-[10px] font-medium text-white bg-[#1a1a1a] px-3 py-1 rounded-full"
               >
-                {keySaved ? "✓ Saved" : "Save Key"}
+                {keySaved ? "Saved" : "Save Key"}
               </button>
             </div>
             {aiApiKey && (
@@ -239,13 +304,23 @@ export default function SettingsPage() {
       <section className="mb-8">
         <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">Data</h2>
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
-          <button onClick={exportAll} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
-            <span className="text-sm text-[#1a1a1a] dark:text-white">Export all data</span>
-            <span className="text-[10px] text-[#9ca3af] font-mono">{exportDone ? "✓ Done" : "JSON"}</span>
+          <button onClick={exportAll} disabled={exporting} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
+            <div className="flex items-center gap-2.5">
+              <Download className="w-4 h-4 text-[#9ca3af]" />
+              <span className="text-sm text-[#1a1a1a] dark:text-white">Export all data</span>
+            </div>
+            <span className="text-[10px] text-[#9ca3af] font-mono">
+              {exporting ? "..." : exportDone ? "Done" : "JSON"}
+            </span>
           </button>
-          <button onClick={() => importRef.current?.click()} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
-            <span className="text-sm text-[#1a1a1a] dark:text-white">Import backup</span>
-            <span className="text-[10px] text-[#9ca3af] font-mono">{importDone ? "✓ Done" : "JSON"}</span>
+          <button onClick={() => importRef.current?.click()} disabled={importing} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
+            <div className="flex items-center gap-2.5">
+              <Upload className="w-4 h-4 text-[#9ca3af]" />
+              <span className="text-sm text-[#1a1a1a] dark:text-white">Import backup</span>
+            </div>
+            <span className="text-[10px] text-[#9ca3af] font-mono">
+              {importing ? "..." : importDone ? "Done" : "JSON"}
+            </span>
           </button>
           <input
             ref={importRef}
@@ -254,7 +329,7 @@ export default function SettingsPage() {
             onChange={importBackup}
             className="hidden"
           />
-          <button onClick={clearAllData} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
+          <button onClick={() => setShowClearConfirm(true)} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
             <div className="flex items-center gap-2.5">
               <Trash2 className="w-4 h-4 text-red-400" />
               <span className="text-sm text-red-400">Clear all data</span>
@@ -269,7 +344,7 @@ export default function SettingsPage() {
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           <div className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333] text-sm">
             <span className="text-[#1a1a1a] dark:text-white">Version</span>
-            <span className="text-[#9ca3af] font-mono text-xs">0.3.0</span>
+            <span className="text-[#9ca3af] font-mono text-xs">0.5.0</span>
           </div>
         </div>
       </section>
@@ -277,6 +352,43 @@ export default function SettingsPage() {
       <p className="text-center text-[10px] text-[#d1d5db] mt-16 font-mono tracking-widest">
         PromptNotes
       </p>
+
+      {/* Clear Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center px-6" onClick={() => setShowClearConfirm(false)}>
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-6 w-full max-w-sm space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-[#1a1a1a] dark:text-white">データを削除</h3>
+                <p className="text-[10px] text-[#9ca3af] font-mono">この操作は取り消せません</p>
+              </div>
+            </div>
+            <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] leading-relaxed">
+              {hybridStore.isCloud
+                ? "クラウドとローカルの全てのデータが削除されます。この操作は取り消せません。"
+                : "ローカルの全てのデータが削除されます。この操作は取り消せません。"}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={clearAllData}
+                disabled={clearing}
+                className="flex-1 py-2.5 bg-red-500 text-white font-medium rounded-xl text-xs disabled:opacity-50"
+              >
+                {clearing ? "削除中..." : "削除する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
