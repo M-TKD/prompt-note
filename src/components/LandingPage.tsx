@@ -11,7 +11,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#f0f0f0] dark:border-[#1a1a1a]">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image src="/logo-icon.png" alt="PromptNotes" width={28} height={28} className="dark:invert" />
+            <img src="/logo-icon.png" alt="PromptNotes" width={28} height={28} className="dark:invert" />
             <span className="font-bold text-sm tracking-tight">PromptNotes</span>
           </div>
           <div className="flex items-center gap-3">
@@ -322,7 +322,7 @@ export default function LandingPage() {
       <footer className="py-8 px-6 border-t border-[#f0f0f0] dark:border-[#1a1a1a]">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Image src="/logo-icon.png" alt="PromptNotes" width={20} height={20} className="dark:invert" />
+            <img src="/logo-icon.png" alt="PromptNotes" width={20} height={20} className="dark:invert" />
             <span className="text-xs text-[#9ca3af] font-mono">PromptNotes</span>
           </div>
           <div className="flex items-center gap-6 text-[11px] text-[#9ca3af]">
