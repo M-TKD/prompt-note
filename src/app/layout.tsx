@@ -26,6 +26,13 @@ export const metadata: Metadata = {
   description:
     "AIプロンプトを保存・編集・共有できる無料サービス。テンプレートやAIレビュー機能で、あなたのプロンプトをもっと良くしよう。",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     siteName: "PromptNotes",
