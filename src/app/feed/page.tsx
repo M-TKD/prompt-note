@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
-import { Heart, GitFork, Copy, Check } from "lucide-react";
+import { Heart, GitFork, Copy, Check, Share2, ExternalLink } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
 
@@ -19,6 +19,7 @@ export default function FeedPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [sharedId, setSharedId] = useState<string | null>(null);
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -69,6 +70,14 @@ export default function FeedPage() {
     setCopiedId(doc.id);
     toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 1500);
+  };
+
+  const handleShare = (doc: PromptDocument) => {
+    const url = `https://prompt-notes.ai/p/${doc.id}`;
+    navigator.clipboard.writeText(url);
+    setSharedId(doc.id);
+    toast("シェアURLをコピーしました", "copy");
+    setTimeout(() => setSharedId(null), 1500);
   };
 
   const handleFork = async (doc: PromptDocument) => {
@@ -235,6 +244,23 @@ export default function FeedPage() {
               >
                 <GitFork className="w-3.5 h-3.5" /> Fork
               </button>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => handleShare(selected)}
+                className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]"
+              >
+                {sharedId === selected.id ? <Check className="w-3.5 h-3.5 text-[#4F46E5]" /> : <Share2 className="w-3.5 h-3.5" />}
+                Share URL
+              </button>
+              <a
+                href={`/p/${selected.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb] no-underline text-[#1a1a1a] dark:text-[#e5e7eb]"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> 詳細ページ
+              </a>
             </div>
             <button onClick={() => setSelected(null)} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
           </div>

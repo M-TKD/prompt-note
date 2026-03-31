@@ -179,3 +179,85 @@ $$ language plpgsql security definer;
 create trigger on_like_changed
   after insert or delete on public.likes
   for each row execute procedure public.update_like_count();
+
+-- ===========================================
+-- v2 Migration: Collections, Document Versions, deleted_at
+-- ===========================================
+
+-- deleted_at カラム（ゴミ箱機能）
+alter table public.documents add column if not exists deleted_at timestamptz default null;
+
+-- ===========================================
+-- COLLECTIONS テーブル
+-- ===========================================
+create table if not exists public.collections (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  name text not null,
+  description text,
+  emoji text,
+  sort_order integer default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_collections_user_id on public.collections(user_id);
+
+alter table public.collections enable row level security;
+
+create policy "Users can view own collections" on public.collections for select using (auth.uid() = user_id);
+create policy "Users can insert own collections" on public.collections for insert with check (auth.uid() = user_id);
+create policy "Users can update own collections" on public.collections for update using (auth.uid() = user_id);
+create policy "Users can delete own collections" on public.collections for delete using (auth.uid() = user_id);
+
+create trigger collections_updated_at
+  before update on public.collections
+  for each row execute procedure public.update_updated_at();
+
+-- ===========================================
+-- COLLECTION_ITEMS テーブル
+-- ===========================================
+create table if not exists public.collection_items (
+  id uuid primary key default gen_random_uuid(),
+  collection_id uuid references public.collections(id) on delete cascade not null,
+  document_id uuid references public.documents(id) on delete cascade not null,
+  added_at timestamptz default now(),
+  unique(collection_id, document_id)
+);
+
+create index if not exists idx_collection_items_collection_id on public.collection_items(collection_id);
+
+alter table public.collection_items enable row level security;
+
+create policy "Users can view own collection items" on public.collection_items for select
+  using (exists (select 1 from public.collections where collections.id = collection_id and collections.user_id = auth.uid()));
+create policy "Users can insert own collection items" on public.collection_items for insert
+  with check (exists (select 1 from public.collections where collections.id = collection_id and collections.user_id = auth.uid()));
+create policy "Users can delete own collection items" on public.collection_items for delete
+  using (exists (select 1 from public.collections where collections.id = collection_id and collections.user_id = auth.uid()));
+
+-- ===========================================
+-- DOCUMENT_VERSIONS テーブル
+-- ===========================================
+create table if not exists public.document_versions (
+  id uuid primary key default gen_random_uuid(),
+  document_id uuid references public.documents(id) on delete cascade not null,
+  user_id uuid references auth.users on delete cascade not null,
+  title text,
+  body_md text not null default '',
+  version_number integer not null default 1,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_document_versions_document_id on public.document_versions(document_id);
+
+alter table public.document_versions enable row level security;
+
+create policy "Users can view own document versions" on public.document_versions for select using (auth.uid() = user_id);
+create policy "Users can insert own document versions" on public.document_versions for insert with check (auth.uid() = user_id);
+create policy "Users can delete own document versions" on public.document_versions for delete using (auth.uid() = user_id);
+
+-- GRANT
+grant all on public.collections to service_role, authenticated;
+grant all on public.collection_items to service_role, authenticated;
+grant all on public.document_versions to service_role, authenticated;
