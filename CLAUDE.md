@@ -24,14 +24,12 @@
 
 ## プロジェクト情報
 
-### 認証情報（参照用）
+### 認証情報
+- **認証情報は `.env.local` に管理** — CLAUDE.md にトークン等を直接記載しない
 - Supabase Project Ref: `yslvwdphqpusgyfuzhzh`
-- Supabase URL: `https://yslvwdphqpusgyfuzhzh.supabase.co`
-- Management API Token: `sbp_599e8eaba232725217d6939ef946e94d52f06e22`
-- GitHub OAuth Client ID: `Ov23liESfU1dPa08QCE7`
-- Google OAuth Client ID: `846280936842-8gsn3plcb2qatdqca34rcped42gsclp1.apps.googleusercontent.com`
 - Production URL: `https://prompt-note-red.vercel.app`
 - GitHub Repo: `https://github.com/M-TKD/prompt-note`
+- その他のキー（Supabase URL, API Token, OAuth Client ID, Stripe等）は `.env.local` を参照
 
 ### 技術スタック
 - Next.js 16.1.7 (Turbopack)
