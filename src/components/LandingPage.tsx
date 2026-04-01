@@ -11,7 +11,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#f0f0f0] dark:border-[#1a1a1a]">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center">
-            <img src="/logo-horizontal.png" alt="PromptNotes" className="h-9 w-auto dark:invert" />
+            <img src="/logo-horizontal.png" alt="PromptNotes" className="h-8 w-auto dark:invert" />
           </div>
           <div className="flex items-center gap-3">
             <Link href="/auth" className="text-xs text-[#9ca3af] hover:text-[#1a1a1a] dark:hover:text-white transition-colors">
