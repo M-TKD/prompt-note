@@ -284,35 +284,31 @@ function EditorContent() {
       </div>
 
       {/* Title */}
-      {!isQuickMemo && (
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
-          className="px-6 py-3 text-lg font-bold outline-none placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] tracking-tight text-[#1a1a1a] dark:text-white bg-transparent"
-        />
-      )}
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder={isQuickMemo ? "Title（任意）" : "Title"}
+        className="px-6 py-3 text-lg font-bold outline-none placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] tracking-tight text-[#1a1a1a] dark:text-white bg-transparent"
+      />
 
       {/* Tags */}
-      {!isQuickMemo && (
-        <div className="px-6 py-1.5 flex items-center gap-1.5 flex-wrap border-b border-[#f0f0f0] dark:border-[#333]">
-          {tags.map((tag) => (
-            <span key={tag} className="text-[10px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#f5f5f5] dark:bg-[#333] flex items-center gap-1 font-mono">
-              #{tag}
-              <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="text-[#d1d5db] hover:text-[#6b7280]">✕</button>
-            </span>
-          ))}
-          <input
-            type="text"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); handleAddTag(); } }}
-            placeholder="tag..."
-            className="text-[10px] outline-none min-w-[60px] flex-1 text-[#9ca3af] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent font-mono"
-          />
-        </div>
-      )}
+      <div className="px-6 py-1.5 flex items-center gap-1.5 flex-wrap border-b border-[#f0f0f0] dark:border-[#333]">
+        {tags.map((tag) => (
+          <span key={tag} className="text-[10px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#f5f5f5] dark:bg-[#333] flex items-center gap-1 font-mono">
+            #{tag}
+            <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="text-[#d1d5db] hover:text-[#6b7280]">✕</button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); handleAddTag(); } }}
+          placeholder="tag..."
+          className="text-[10px] outline-none min-w-[60px] flex-1 text-[#9ca3af] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent font-mono"
+        />
+      </div>
 
       {/* Editor / Preview */}
       <div className="flex-1 overflow-auto">

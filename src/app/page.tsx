@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useStore } from "@/lib/use-store";
 import { useAuth } from "@/lib/auth-context";
 import { PromptDocument, TYPE_CONFIG, DocumentType } from "@/lib/types";
-import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check, ArrowRight } from "lucide-react";
+import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check, ArrowRight, Compass, FolderOpen } from "lucide-react";
+import { CATEGORIES } from "@/lib/types";
 import { useToast } from "@/components/Toast";
 import LandingPage from "@/components/LandingPage";
 
@@ -144,6 +145,39 @@ export default function HomePage() {
             {f.label}
           </button>
         ))}
+      </div>
+
+      {/* Quick Access: Explore categories & Collections */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Compass className="w-3.5 h-3.5 text-[#4F46E5]" />
+          <span className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest">Explore</span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {CATEGORIES.filter(c => c !== "すべて").map((cat) => (
+            <Link
+              key={cat}
+              href={`/feed?cat=${encodeURIComponent(cat)}`}
+              className="shrink-0 px-3 py-2 rounded-lg border border-[#f0f0f0] dark:border-[#333] bg-[#fafafa] dark:bg-[#222] text-xs font-medium text-[#6b7280] dark:text-[#9ca3af] hover:border-[#4F46E5] hover:text-[#4F46E5] transition-colors"
+            >
+              {cat}
+            </Link>
+          ))}
+          <Link
+            href="/feed"
+            className="shrink-0 px-3 py-2 rounded-lg border border-[#4F46E5]/20 bg-[#EEF2FF] dark:bg-[#4F46E5]/10 text-xs font-medium text-[#4F46E5] hover:bg-[#4F46E5]/20 transition-colors"
+          >
+            すべて見る →
+          </Link>
+        </div>
+        <Link
+          href="/collections"
+          className="mt-3 flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-[#f0f0f0] dark:border-[#333] bg-[#fafafa] dark:bg-[#222] hover:border-[#4F46E5] transition-colors"
+        >
+          <FolderOpen className="w-4 h-4 text-[#4F46E5]" />
+          <span className="text-xs font-medium text-[#1a1a1a] dark:text-white">コレクション</span>
+          <ArrowRight className="w-3 h-3 text-[#d1d5db] ml-auto" />
+        </Link>
       </div>
 
       {/* Boost suggestion */}

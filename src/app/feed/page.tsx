@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
 import { Heart, GitFork, Copy, Check, Share2, ExternalLink } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
 
-export default function FeedPage() {
+function FeedContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const hybridStore = useStore();
   const { toast } = useToast();
   const [docs, setDocs] = useState<PromptDocument[]>([]);
-  const [category, setCategory] = useState("すべて");
+  const initialCategory = searchParams.get("cat") || "すべて";
+  const [category, setCategory] = useState(initialCategory);
   const [sort, setSort] = useState<"popular" | "recent">("popular");
   const [selected, setSelected] = useState<PromptDocument | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -267,5 +269,20 @@ export default function FeedPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function FeedPage() {
+  return (
+    <Suspense fallback={
+      <div className="px-6 pt-14">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Explore</h1>
+          <p className="text-xs text-[#9ca3af] mt-1 font-mono">Loading...</p>
+        </div>
+      </div>
+    }>
+      <FeedContent />
+    </Suspense>
   );
 }
