@@ -204,7 +204,7 @@ function EditorContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-[#1a1a1a]">
+    <div className="flex flex-col h-dvh bg-white dark:bg-[#1a1a1a]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] dark:border-[#333]">
         <button onClick={() => router.back()} className="text-[#9ca3af] hover:text-[#1a1a1a] dark:hover:text-white">
@@ -216,6 +216,18 @@ function EditorContent() {
           </span>
           {draftRestored && (
             <span className="text-[9px] text-[#4F46E5] font-mono">draft restored</span>
+          )}
+          {/* Quick actions in header */}
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            className="text-[10px] px-2 py-0.5 rounded font-mono text-[#9ca3af] hover:text-[#1a1a1a] dark:hover:text-white"
+          >
+            {showPreview ? "Edit" : "Preview"}
+          </button>
+          {hasContent && (
+            <button onClick={() => setShowAIReview(true)} className="text-[10px] px-1.5 py-0.5 rounded font-mono text-[#6b7280] hover:text-[#4F46E5]">
+              AI
+            </button>
           )}
         </div>
         <button
@@ -328,103 +340,74 @@ function EditorContent() {
         )}
       </div>
 
-      {/* Symbol shortcut bar (Type-style) */}
-      {!showPreview && (
-        <div className="border-t border-[#f0f0f0] dark:border-[#333]">
-          {/* Row 1: Quick symbols */}
-          <div className="flex items-center px-1 py-0.5 overflow-x-auto gap-0">
+      {/* Unified Toolbar — keyboard-attached, single row */}
+      <div className="border-t border-[#f0f0f0] dark:border-[#333] bg-white dark:bg-[#1a1a1a]">
+        {/* Row 1: Markdown symbols (scrollable) — always visible */}
+        {!showPreview && (
+          <div className="flex items-center px-1 py-0.5 overflow-x-auto no-scrollbar">
             {["#", "*", "_", "+", "-", "`", "<", ">", "!", "[", "]", "(", ")", "|", "~", "{{"].map((char) => (
               <button
                 key={char}
                 onClick={() => char === "{{" ? insertMarkdown("{{", "}}") : insertChar(char)}
-                className="min-w-[32px] h-8 flex items-center justify-center text-[13px] font-mono text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#333] rounded"
+                className="min-w-[34px] h-9 flex items-center justify-center text-[14px] font-mono text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white active:bg-[#f0f0f0] dark:active:bg-[#333] rounded"
               >
                 {char}
               </button>
             ))}
-            <span className="ml-auto text-[9px] text-[#d1d5db] font-mono pr-2 whitespace-nowrap">{wordCount}字</span>
           </div>
-          {/* Row 2: Semantic shortcuts */}
-          <div className="flex items-center px-1 py-0.5 overflow-x-auto gap-0 border-t border-[#f5f5f5] dark:border-[#333]">
-            {[
-              { icon: <Heading1 className="w-3 h-3" />, action: () => insertMarkdown("# ") },
-              { icon: <Heading2 className="w-3 h-3" />, action: () => insertMarkdown("## ") },
-              { icon: <Bold className="w-3 h-3" />, action: () => insertMarkdown("**", "**") },
-              { icon: <Italic className="w-3 h-3" />, action: () => insertMarkdown("_", "_") },
-              { icon: <Code className="w-3 h-3" />, action: () => insertMarkdown("```\n", "\n```") },
-              { icon: <List className="w-3 h-3" />, action: () => insertMarkdown("- ") },
-              { icon: <Quote className="w-3 h-3" />, action: () => insertMarkdown("> ") },
-              { icon: <Link2 className="w-3 h-3" />, action: () => insertMarkdown("[", "](URL)") },
-              { icon: <Minus className="w-3 h-3" />, action: () => insertMarkdown("\n---\n") },
-            ].map((btn, i) => (
-              <button key={i} onClick={btn.action} className="p-1.5 text-[#d1d5db] dark:text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white rounded">
-                {btn.icon}
-              </button>
-            ))}
-          </div>
+        )}
+        {/* Row 2: Semantic + actions (scrollable) */}
+        <div className="flex items-center px-1 py-1 overflow-x-auto no-scrollbar gap-0.5 border-t border-[#f5f5f5] dark:border-[#333]">
+          {!showPreview && (
+            <>
+              {[
+                { icon: <Heading1 className="w-3.5 h-3.5" />, action: () => insertMarkdown("# ") },
+                { icon: <Heading2 className="w-3.5 h-3.5" />, action: () => insertMarkdown("## ") },
+                { icon: <Bold className="w-3.5 h-3.5" />, action: () => insertMarkdown("**", "**") },
+                { icon: <Italic className="w-3.5 h-3.5" />, action: () => insertMarkdown("_", "_") },
+                { icon: <Code className="w-3.5 h-3.5" />, action: () => insertMarkdown("```\n", "\n```") },
+                { icon: <List className="w-3.5 h-3.5" />, action: () => insertMarkdown("- ") },
+                { icon: <Quote className="w-3.5 h-3.5" />, action: () => insertMarkdown("> ") },
+                { icon: <Link2 className="w-3.5 h-3.5" />, action: () => insertMarkdown("[", "](URL)") },
+                { icon: <Minus className="w-3.5 h-3.5" />, action: () => insertMarkdown("\n---\n") },
+              ].map((btn, i) => (
+                <button key={i} onClick={btn.action} className="p-2 text-[#9ca3af] dark:text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+                  {btn.icon}
+                </button>
+              ))}
+              {/* Separator */}
+              <div className="w-px h-5 bg-[#e5e7eb] dark:bg-[#444] mx-1 shrink-0" />
+            </>
+          )}
+          {/* Actions */}
+          {hasContent && (
+            <button onClick={handleCopy} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+              {copied ? <Check className="w-3.5 h-3.5 text-[#4F46E5]" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          )}
+          {hasContent && (
+            <button onClick={handleShare} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasContent && (
+            <button onClick={handleExport} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+              <Download className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasContent && editId && (
+            <button onClick={() => setShowCollectionSheet(true)} className="p-2 text-[#9ca3af] hover:text-[#4F46E5] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+              <FolderPlus className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {editId && hybridStore.isCloud && (
+            <button onClick={() => setShowVersionHistory(true)} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+              <History className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {/* Word count */}
+          <span className="ml-auto text-[9px] text-[#d1d5db] font-mono pr-2 whitespace-nowrap shrink-0">{wordCount}字</span>
         </div>
-      )}
-
-      {/* Bottom action bar */}
-      <div className="flex items-center gap-2.5 px-4 py-2 border-t border-[#f0f0f0] dark:border-[#333]">
-        <button
-          onClick={() => setShowPreview(!showPreview)}
-          className="text-[11px] flex items-center gap-1 text-[#9ca3af] font-mono"
-        >
-          {showPreview ? <Pencil className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-          {showPreview ? "edit" : "preview"}
-        </button>
-
-        <div className="flex-1" />
-
-        {/* Version History */}
-        {editId && hybridStore.isCloud && (
-          <button onClick={() => setShowVersionHistory(true)} className="text-[11px] flex items-center gap-1 text-[#9ca3af] font-mono">
-            <History className="w-3 h-3" />
-            履歴
-          </button>
-        )}
-
-        {/* AI Review */}
-        {hasContent && (
-          <button onClick={() => setShowAIReview(true)} className="text-[11px] flex items-center gap-1 text-[#6b7280] font-mono">
-            <WandSparkles className="w-3 h-3" />
-            AI Review
-            {aiUsage && aiUsage.limit > 0 && (
-              <span className="text-[9px] text-[#9ca3af] ml-0.5">
-                残り {aiUsage.limit - aiUsage.used}/{aiUsage.limit} 回
-              </span>
-            )}
-          </button>
-        )}
-
-        {/* Share */}
-        {hasContent && (
-          <button onClick={handleShare} className="text-[#9ca3af] hover:text-[#6b7280]">
-            <Share2 className="w-3.5 h-3.5" />
-          </button>
-        )}
-
-        {/* Export */}
-        {hasContent && (
-          <button onClick={handleExport} className="text-[#9ca3af] hover:text-[#6b7280]">
-            <Download className="w-3.5 h-3.5" />
-          </button>
-        )}
-
-        {/* Add to Collection */}
-        {hasContent && editId && (
-          <button onClick={() => setShowCollectionSheet(true)} className="text-[#9ca3af] hover:text-[#4F46E5]">
-            <FolderPlus className="w-3.5 h-3.5" />
-          </button>
-        )}
-
-        {/* Copy */}
-        {hasContent && (
-          <button onClick={handleCopy} className="text-[#d1d5db] hover:text-[#6b7280]">
-            {copied ? <Check className="w-3.5 h-3.5 text-[#4F46E5]" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
-        )}
       </div>
 
       {/* Sheets */}

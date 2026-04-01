@@ -98,21 +98,33 @@ function FeedContent() {
         <p className="text-xs text-[#9ca3af] mt-1 font-mono">Community prompts</p>
       </div>
 
-      {/* Categories */}
-      <div className="flex gap-3 mb-4 overflow-x-auto pb-1">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={`px-3 py-1 rounded text-[11px] font-mono whitespace-nowrap ${
-              category === cat
-                ? "bg-[#1a1a1a] text-white dark:bg-white dark:text-[#1a1a1a]"
-                : "text-[#d1d5db] dark:text-[#6b7280] hover:text-[#6b7280]"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* Categories with count badges */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
+        {CATEGORIES.map((cat) => {
+          const count = cat === "すべて"
+            ? docs.length
+            : docs.filter(d => d.tags.includes(cat)).length;
+          return (
+            <button
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap flex items-center gap-1.5 ${
+                category === cat
+                  ? "bg-[#1a1a1a] text-white dark:bg-white dark:text-[#1a1a1a]"
+                  : "bg-[#f5f5f5] dark:bg-[#222] text-[#6b7280] dark:text-[#9ca3af] hover:bg-[#e5e7eb] dark:hover:bg-[#333]"
+              }`}
+            >
+              {cat}
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
+                category === cat
+                  ? "bg-white/20 text-white dark:bg-black/20 dark:text-[#1a1a1a]"
+                  : "bg-[#e5e7eb] dark:bg-[#333] text-[#9ca3af]"
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Sort */}
@@ -144,58 +156,68 @@ function FeedContent() {
           <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">Be the first</p>
         </div>
       ) : (
-        <div>
-          {docs.map((doc) => (
-            <div
-              key={doc.id}
-              onClick={() => setSelected(doc)}
-              className="py-4 border-b border-[#f0f0f0] dark:border-[#333] last:border-0 cursor-pointer"
-            >
-              <p className="font-medium text-sm text-[#1a1a1a] dark:text-white mb-1">{doc.title || doc.bodyMd.split("\n")[0]?.slice(0, 40)}</p>
-              <p className="text-xs text-[#9ca3af] line-clamp-2 mb-2 leading-relaxed">{doc.bodyMd.replace(/\n/g, " ")}</p>
+        <div className="space-y-3 pb-24">
+          {docs.map((doc) => {
+            const displayTitle = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 40) || "Untitled";
+            const bodyPreview = doc.bodyMd.replace(/^#+\s*.*\n?/, "").replace(/\n/g, " ").slice(0, 80);
+            return (
+              <div
+                key={doc.id}
+                onClick={() => setSelected(doc)}
+                className="p-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] bg-white dark:bg-[#141414] cursor-pointer hover:border-[#4F46E5]/30 active:bg-[#fafafa] dark:active:bg-[#1a1a1a]"
+              >
+                {/* Title + Author row */}
+                <div className="flex items-start gap-3 mb-2">
+                  {/* Icon */}
+                  <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[#4F46E5] text-sm font-bold">{TYPE_CONFIG[doc.type].icon}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm text-[#1a1a1a] dark:text-white truncate">{displayTitle}</p>
+                    <p className="text-xs text-[#9ca3af] line-clamp-2 mt-0.5 leading-relaxed">{bodyPreview}</p>
+                  </div>
+                </div>
 
-              {/* Author */}
-              {doc.author && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); router.push(`/profile?userId=${doc.userId}`); }}
-                  className="flex items-center gap-1.5 mb-2"
-                >
-                  {doc.author.avatarUrl ? (
-                    <img
-                      src={doc.author.avatarUrl}
-                      alt=""
-                      className="w-5 h-5 rounded-full object-cover ring-1 ring-[#e5e7eb] dark:ring-[#444]"
-                    />
-                  ) : (
-                    <span className="w-5 h-5 rounded-full bg-[#f3f4f6] dark:bg-[#2a2a2a] flex items-center justify-center text-[9px] font-bold text-[#9ca3af] dark:text-[#6b7280]">
-                      {doc.author.name[0].toUpperCase()}
+                {/* Bottom: tags + stats */}
+                <div className="flex items-center gap-2 mt-3">
+                  {/* Category tags */}
+                  {doc.tags.slice(0, 2).map((t) => (
+                    <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-[#f5f5f5] dark:bg-[#222] text-[#6b7280] dark:text-[#9ca3af] font-medium">
+                      {t}
+                    </span>
+                  ))}
+
+                  {/* Author */}
+                  {doc.author && (
+                    <span className="text-[10px] text-[#9ca3af] dark:text-[#6b7280] font-mono ml-auto mr-2 truncate max-w-[100px]">
+                      by {doc.author.name}
                     </span>
                   )}
-                  <span className="text-[11px] text-[#9ca3af] dark:text-[#6b7280] font-mono">
-                    {doc.author.name}
-                  </span>
-                </button>
-              )}
 
-              {doc.tags.length > 0 && (
-                <div className="flex gap-1.5 mb-2">
-                  {doc.tags.slice(0, 3).map((t) => (
-                    <span key={t} className="text-[10px] text-[#d1d5db] font-mono">#{t}</span>
-                  ))}
+                  {/* Like badge */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }}
+                    className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      likedIds.has(doc.id)
+                        ? "bg-[#4F46E5]/10 text-[#4F46E5]"
+                        : "bg-[#f5f5f5] dark:bg-[#222] text-[#9ca3af] hover:text-[#4F46E5]"
+                    }`}
+                  >
+                    <Heart className={`w-3 h-3 ${likedIds.has(doc.id) ? "fill-current" : ""}`} />
+                    {doc.likeCount}
+                  </button>
+
+                  {/* Fork badge */}
+                  {doc.forkCount > 0 && (
+                    <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[#ECFDF5] dark:bg-[#065F46]/20 text-[#059669] font-medium">
+                      <GitFork className="w-3 h-3" />
+                      {doc.forkCount}
+                    </span>
+                  )}
                 </div>
-              )}
-
-              <div className="flex items-center gap-4 text-[10px] text-[#d1d5db] font-mono">
-                <button onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }} className={`flex items-center gap-1 hover:text-[#4F46E5] ${likedIds.has(doc.id) ? "text-[#4F46E5]" : ""}`}>
-                  <Heart className={`w-3 h-3 ${likedIds.has(doc.id) ? "fill-current" : ""}`} /> {doc.likeCount}
-                </button>
-                <span className="flex items-center gap-1"><GitFork className="w-3 h-3" /> {doc.forkCount}</span>
-                <button onClick={(e) => { e.stopPropagation(); handleCopy(doc); }} className="ml-auto hover:text-[#6b7280]">
-                  {copiedId === doc.id ? <Check className="w-3 h-3 text-[#4F46E5]" /> : <Copy className="w-3 h-3" />}
-                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
