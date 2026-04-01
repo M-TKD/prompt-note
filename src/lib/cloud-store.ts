@@ -79,7 +79,8 @@ export const cloudStore = {
       .from("documents")
       .select("*, profiles:user_id(display_name, avatar_url)")
       .eq("visibility", "public")
-      .neq("type", "note");
+      .neq("type", "note")
+      .is("deleted_at", null);
 
     if (category && category !== "すべて") {
       query = query.contains("tags", [category]);
@@ -93,14 +94,40 @@ export const cloudStore = {
 
     query = query.limit(50);
 
-    const { data, error } = await query;
+    let { data, error } = await query;
+
+    // If the profiles JOIN fails (missing FK), retry without the JOIN
     if (error) {
-      console.error("getPublicDocuments error:", JSON.stringify(error));
-      return [];
+      console.warn("getPublicDocuments JOIN failed, retrying without profiles:", JSON.stringify(error));
+      let fallbackQuery = supabase
+        .from("documents")
+        .select("*")
+        .eq("visibility", "public")
+        .neq("type", "note")
+        .is("deleted_at", null);
+
+      if (category && category !== "すべて") {
+        fallbackQuery = fallbackQuery.contains("tags", [category]);
+      }
+      if (sort === "popular") {
+        fallbackQuery = fallbackQuery.order("like_count", { ascending: false });
+      } else {
+        fallbackQuery = fallbackQuery.order("created_at", { ascending: false });
+      }
+      fallbackQuery = fallbackQuery.limit(50);
+
+      const fallback = await fallbackQuery;
+      if (fallback.error) {
+        console.error("getPublicDocuments fallback error:", JSON.stringify(fallback.error));
+        return [];
+      }
+      data = fallback.data;
+      error = null;
     }
+
     return (data || []).map((row) => {
       const doc = toDocument(row);
-      const profile = row.profiles as { display_name: string | null; avatar_url: string | null } | null;
+      const profile = (row as Record<string, unknown>).profiles as { display_name: string | null; avatar_url: string | null } | null;
       if (profile) {
         doc.author = {
           name: profile.display_name || "Anonymous",
