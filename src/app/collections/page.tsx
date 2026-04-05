@@ -229,7 +229,7 @@ function CollectionsContent() {
                     </Link>
                     <button
                       onClick={() => handleRemoveFromCollection(doc.id)}
-                      className="text-[#d1d5db] hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-[#d1d5db] hover:text-red-400 p-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -375,7 +375,7 @@ function CollectionsContent() {
                       </div>
                       <ChevronRight className="w-4 h-4 text-[#d1d5db] shrink-0" />
                     </button>
-                    <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 ml-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => {
                           setEditingId(col.id);

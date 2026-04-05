@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useStore } from "@/lib/use-store";
 import { useAuth } from "@/lib/auth-context";
 import { PromptDocument, TYPE_CONFIG, DocumentType } from "@/lib/types";
-import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check, ArrowRight, Compass, FolderOpen } from "lucide-react";
+import { Trash2, HelpCircle, Upload, Pin, PinOff, Copy, Check, ArrowRight, Compass, FolderOpen, FolderPlus } from "lucide-react";
+import { CollectionSheet } from "@/components/CollectionSheet";
 import { CATEGORIES } from "@/lib/types";
 import { useToast } from "@/components/Toast";
 import LandingPage from "@/components/LandingPage";
@@ -20,6 +21,7 @@ export default function HomePage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [signupDismissed, setSignupDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [collectionDocId, setCollectionDocId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Seed data for local-only mode
@@ -247,22 +249,30 @@ export default function HomePage() {
             <>
               <p className="text-[9px] text-[#9ca3af] font-mono uppercase tracking-widest mb-2">Pinned</p>
               {pinned.map((doc) => (
-                <DocumentRow key={doc.id} doc={doc} isPinned onDelete={() => handleDelete(doc.id)} onTogglePin={() => handleTogglePin(doc.id)} />
+                <DocumentRow key={doc.id} doc={doc} isPinned onDelete={() => handleDelete(doc.id)} onTogglePin={() => handleTogglePin(doc.id)} onCollection={user ? () => setCollectionDocId(doc.id) : undefined} />
               ))}
               {unpinned.length > 0 && <div className="border-t border-[#f0f0f0] dark:border-[#333] my-3" />}
             </>
           )}
           {/* Rest */}
           {unpinned.map((doc) => (
-            <DocumentRow key={doc.id} doc={doc} isPinned={false} onDelete={() => handleDelete(doc.id)} onTogglePin={() => handleTogglePin(doc.id)} />
+            <DocumentRow key={doc.id} doc={doc} isPinned={false} onDelete={() => handleDelete(doc.id)} onTogglePin={() => handleTogglePin(doc.id)} onCollection={user ? () => setCollectionDocId(doc.id) : undefined} />
           ))}
         </div>
+      )}
+
+      {/* Collection Sheet */}
+      {collectionDocId && (
+        <CollectionSheet
+          documentId={collectionDocId}
+          onClose={() => setCollectionDocId(null)}
+        />
       )}
     </div>
   );
 }
 
-function DocumentRow({ doc, isPinned, onDelete, onTogglePin }: { doc: PromptDocument; isPinned: boolean; onDelete: () => void; onTogglePin: () => void }) {
+function DocumentRow({ doc, isPinned, onDelete, onTogglePin, onCollection }: { doc: PromptDocument; isPinned: boolean; onDelete: () => void; onTogglePin: () => void; onCollection?: () => void }) {
   const { toast } = useToast();
   const config = TYPE_CONFIG[doc.type];
   const displayTitle = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 40) || "Untitled";
@@ -287,12 +297,14 @@ function DocumentRow({ doc, isPinned, onDelete, onTogglePin }: { doc: PromptDocu
     // Only horizontal swipe
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
       setSwiping(true);
-      setSwipeX(Math.min(0, Math.max(-140, dx)));
+      const maxSwipe = onCollection ? -184 : -140;
+      setSwipeX(Math.min(0, Math.max(maxSwipe, dx)));
     }
   };
   const handleTouchEnd = () => {
+    const snapTo = onCollection ? -184 : -140;
     if (swipeX < -80) {
-      setSwipeX(-140);
+      setSwipeX(snapTo);
     } else {
       setSwipeX(0);
       setSwiping(false);
@@ -312,6 +324,11 @@ function DocumentRow({ doc, isPinned, onDelete, onTogglePin }: { doc: PromptDocu
     <div className="relative overflow-hidden">
       {/* Swipe actions (behind) */}
       <div className="absolute right-0 top-0 bottom-0 flex items-stretch">
+        {onCollection && (
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCollection(); setSwipeX(0); setSwiping(false); }} className="w-[46px] bg-[#8B5CF6] flex items-center justify-center text-white">
+            <FolderPlus className="w-4 h-4" />
+          </button>
+        )}
         <button onClick={(e) => { e.preventDefault(); onTogglePin(); setSwipeX(0); }} className="w-[46px] bg-[#4F46E5] flex items-center justify-center text-white">
           {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
         </button>
