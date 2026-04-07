@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Heart, GitFork, Share2, Copy, Check, Link, X } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
+import { useStore } from "@/lib/use-store";
+import { useAuth } from "@/lib/auth-context";
 
 type Props = {
   id: string;
@@ -13,15 +15,25 @@ type Props = {
 };
 
 export function PublicPromptClient({ id, title, likeCount, forkCount, bodyMd }: Props) {
+  const hybridStore = useStore();
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [currentLikes, setCurrentLikes] = useState(likeCount);
+  const [forking, setForking] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
 
   const pageUrl =
     typeof window !== "undefined"
       ? window.location.href
       : `https://prompt-notes.ai/p/${id}`;
+
+  // Check initial like state
+  useEffect(() => {
+    hybridStore.isLiked(id).then(setLiked);
+  }, [hybridStore, id]);
 
   // Close share panel on outside click
   useEffect(() => {
@@ -35,6 +47,12 @@ export function PublicPromptClient({ id, title, likeCount, forkCount, bodyMd }: 
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [shareOpen]);
+
+  async function handleToggleLike() {
+    const nowLiked = await hybridStore.toggleLike(id);
+    setLiked(nowLiked);
+    setCurrentLikes((prev) => prev + (nowLiked ? 1 : -1));
+  }
 
   async function handleCopyLink() {
     try {
@@ -66,24 +84,37 @@ export function PublicPromptClient({ id, title, likeCount, forkCount, bodyMd }: 
     }
   }
 
-  function handleFork() {
-    window.location.href = `/editor?fork=${id}`;
+  async function handleFork() {
+    setForking(true);
+    const forked = await hybridStore.fork(id);
+    if (forked) {
+      window.location.href = `/editor?id=${forked.id}`;
+    } else {
+      window.location.href = `/editor?fork=${id}`;
+    }
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Markdown body */}
       <div className="bg-gray-50 dark:bg-[#252525] rounded-xl p-5 sm:p-6 border border-gray-200 dark:border-gray-700">
         <MarkdownPreview content={bodyMd} />
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-        <span className="flex items-center gap-1.5">
-          <Heart size={16} />
-          {likeCount}
-        </span>
-        <span className="flex items-center gap-1.5">
+      {/* Stats - interactive */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleToggleLike}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            liked
+              ? "bg-[#4F46E5]/10 text-[#4F46E5] dark:bg-[#4F46E5]/20"
+              : "bg-gray-100 dark:bg-[#252525] text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#303030]"
+          }`}
+        >
+          <Heart size={16} className={liked ? "fill-current" : ""} />
+          {currentLikes}
+        </button>
+        <span className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gray-100 dark:bg-[#252525] text-gray-500 dark:text-gray-400">
           <GitFork size={16} />
           {forkCount}
         </span>
@@ -101,10 +132,11 @@ export function PublicPromptClient({ id, title, likeCount, forkCount, bodyMd }: 
 
         <button
           onClick={handleFork}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-[#4F46E5] text-white hover:bg-[#4338CA] transition-colors"
+          disabled={forking}
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-[#4F46E5] text-white hover:bg-[#4338CA] transition-colors disabled:opacity-60"
         >
           <GitFork size={16} />
-          フォークして使う
+          {forking ? "フォーク中..." : "フォークして使う"}
         </button>
 
         {/* Share button with dropdown */}
