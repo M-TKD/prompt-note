@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
-import { Heart, GitFork, Copy, Check, Share2, ExternalLink } from "lucide-react";
+import { Heart, GitFork, Copy, Check, Share2, ExternalLink, Search, X } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
 
@@ -22,6 +22,18 @@ function FeedContent() {
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [sharedId, setSharedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredDocs = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return docs;
+    return docs.filter(d =>
+      (d.title || "").toLowerCase().includes(q) ||
+      d.bodyMd.toLowerCase().includes(q) ||
+      d.tags.some(t => t.toLowerCase().includes(q)) ||
+      (d.author?.name || "").toLowerCase().includes(q)
+    );
+  }, [docs, searchQuery]);
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -98,6 +110,23 @@ function FeedContent() {
         <p className="text-xs text-[#9ca3af] mt-1 font-mono">Community prompts</p>
       </div>
 
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="プロンプトを検索..."
+          className="w-full pl-9 pr-8 py-2.5 text-sm bg-[#f5f5f5] dark:bg-[#222] border-0 rounded-xl text-[#1a1a1a] dark:text-white placeholder-[#9ca3af] outline-none focus:ring-2 focus:ring-[#4F46E5]/30"
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#6b7280]">
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       {/* Categories with count badges */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
         {CATEGORIES.map((cat) => {
@@ -150,14 +179,14 @@ function FeedContent() {
         <div className="text-center py-28">
           <p className="text-[#d1d5db] text-sm font-mono">Loading...</p>
         </div>
-      ) : docs.length === 0 ? (
+      ) : filteredDocs.length === 0 ? (
         <div className="text-center py-28">
-          <p className="text-[#d1d5db] text-sm">No public prompts yet</p>
-          <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">Be the first</p>
+          <p className="text-[#d1d5db] text-sm">{searchQuery ? "検索結果がありません" : "No public prompts yet"}</p>
+          <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">{searchQuery ? `"${searchQuery}" に一致するプロンプトが見つかりません` : "Be the first"}</p>
         </div>
       ) : (
         <div className="space-y-3 pb-24">
-          {docs.map((doc) => {
+          {filteredDocs.map((doc) => {
             const displayTitle = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 40) || "Untitled";
             const bodyPreview = doc.bodyMd.replace(/^#+\s*.*\n?/, "").replace(/\n/g, " ").slice(0, 80);
             return (
