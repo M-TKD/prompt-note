@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Heart, GitFork, Share2, Copy, Check, Link, X } from "lucide-react";
+import { MarkdownPreview } from "@/components/MarkdownPreview";
 
 type Props = {
   id: string;
@@ -71,6 +72,11 @@ export function PublicPromptClient({ id, title, likeCount, forkCount, bodyMd }: 
 
   return (
     <div className="space-y-4">
+      {/* Markdown body */}
+      <div className="bg-gray-50 dark:bg-[#252525] rounded-xl p-5 sm:p-6 border border-gray-200 dark:border-gray-700">
+        <MarkdownPreview content={bodyMd} />
+      </div>
+
       {/* Stats */}
       <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
         <span className="flex items-center gap-1.5">

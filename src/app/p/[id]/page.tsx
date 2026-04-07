@@ -117,12 +117,10 @@ export default async function PublicPromptPage({ params }: Props) {
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <a
             href="/"
-            className="flex items-center gap-2 text-gray-900 dark:text-gray-100 no-underline"
+            className="flex items-center no-underline"
           >
-            <div className="w-7 h-7 bg-[#4F46E5] rounded-lg flex items-center justify-center text-white text-sm font-bold">
-              P
-            </div>
-            <span className="font-bold text-lg">PromptNotes</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-horizontal.png" alt="PromptNotes" className="h-8 w-auto dark:invert" />
           </a>
           <a
             href="/"
@@ -189,14 +187,7 @@ export default async function PublicPromptPage({ params }: Props) {
           </div>
         )}
 
-        {/* Prompt body */}
-        <div className="bg-gray-50 dark:bg-[#252525] rounded-xl p-5 sm:p-6 mb-6 border border-gray-200 dark:border-gray-700">
-          <div className="markdown-preview prose dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-gray-800 dark:text-gray-200">
-            {doc.bodyMd}
-          </div>
-        </div>
-
-        {/* Stats & Actions — client component */}
+        {/* Stats & Actions + Markdown body — client component */}
         <PublicPromptClient
           id={doc.id}
           title={doc.title}

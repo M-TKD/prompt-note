@@ -181,13 +181,21 @@ function EditorContent() {
   };
 
   const handleShare = async () => {
+    const publicUrl = visibility === "public" && editId
+      ? `https://prompt-notes.ai/p/${editId}`
+      : undefined;
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: title || "PromptNotes",
-          text: bodyMd,
+          text: publicUrl ? undefined : bodyMd,
+          url: publicUrl,
         });
       } catch { /* user cancelled */ }
+    } else if (publicUrl) {
+      await navigator.clipboard.writeText(publicUrl);
+      toast("共有URLをコピーしました");
     } else {
       handleCopy();
     }
