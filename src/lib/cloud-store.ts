@@ -137,7 +137,10 @@ export const cloudStore = {
       return doc;
     });
 
-    // Merge SAMPLE_PROMPTS (seed data) with DB results
+    // Remove any DB docs that came from seed data (userId "sample")
+    // to avoid duplicates, then merge with fresh SAMPLE_PROMPTS
+    const userDocs = dbDocs.filter((d) => d.userId !== "sample");
+
     const sampleDocs: PromptDocument[] = SAMPLE_PROMPTS
       .filter((s) => {
         if (category && category !== "すべて") {
@@ -153,7 +156,7 @@ export const cloudStore = {
         author: { name: "PromptNotes Official" },
       }));
 
-    const merged = [...dbDocs, ...sampleDocs];
+    const merged = [...userDocs, ...sampleDocs];
 
     if (sort === "popular") {
       merged.sort((a, b) => b.likeCount - a.likeCount);
