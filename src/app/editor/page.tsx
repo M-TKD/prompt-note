@@ -16,6 +16,7 @@ import {
   Share2, Download, Variable, History, RotateCcw, FolderPlus,
 } from "lucide-react";
 import { CollectionSheet } from "@/components/CollectionSheet";
+import { ShareSheet } from "@/components/ShareSheet";
 
 function EditorContent() {
   const searchParams = useSearchParams();
@@ -40,6 +41,7 @@ function EditorContent() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showCollectionSheet, setShowCollectionSheet] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
@@ -180,23 +182,11 @@ function EditorContent() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const handleShare = async () => {
-    const publicUrl = visibility === "public" && editId
-      ? `https://prompt-notes.ai/p/${editId}`
-      : undefined;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: title || "PromptNotes",
-          text: publicUrl ? undefined : bodyMd,
-          url: publicUrl,
-        });
-      } catch { /* user cancelled */ }
-    } else if (publicUrl) {
-      await navigator.clipboard.writeText(publicUrl);
-      toast("共有URLをコピーしました");
+  const handleShare = () => {
+    if (visibility === "public" && editId) {
+      setShowShareSheet(true);
     } else {
+      // Private: copy body text
       handleCopy();
     }
   };
@@ -449,6 +439,14 @@ function EditorContent() {
         />
       )}
       {showSendToAI && <SendToAISheet promptText={bodyMd} onClose={() => setShowSendToAI(false)} />}
+      {showShareSheet && editId && (
+        <ShareSheet
+          url={`https://prompt-notes.ai/p/${editId}`}
+          title={title || "Prompt"}
+          tags={tags}
+          onClose={() => setShowShareSheet(false)}
+        />
+      )}
       {showAIReview && <AIReviewSheet bodyMd={bodyMd} onApply={(s) => { setBodyMd(s); setShowAIReview(false); }} onClose={() => setShowAIReview(false)} onUsageUpdate={setAiUsage} onLimitReached={() => { setShowAIReview(false); setShowUpgradeModal(true); }} />}
       {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
       {showVariables && <VariablesSheet bodyMd={bodyMd} onFill={(filled) => { setBodyMd(filled); setShowVariables(false); }} onClose={() => setShowVariables(false)} />}

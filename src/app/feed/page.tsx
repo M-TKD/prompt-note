@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG, SAMPLE_PROMPTS } from "@/lib/types";
-import { Heart, GitFork, Copy, Check, Share2, ExternalLink, Search, X, TrendingUp, Sparkles, Download } from "lucide-react";
+import { Heart, GitFork, Copy, Check, ExternalLink, Search, X, TrendingUp, Sparkles, Download } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
+import { ShareSheet } from "@/components/ShareSheet";
 import { useToast } from "@/components/Toast";
 
 function FeedContent() {
@@ -21,7 +22,7 @@ function FeedContent() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [sharedId, setSharedId] = useState<string | null>(null);
+  const [shareDoc, setShareDoc] = useState<PromptDocument | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Top 5 most popular for the featured banner
@@ -134,14 +135,6 @@ function FeedContent() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast("ダウンロードしました");
-  };
-
-  const handleShare = (doc: PromptDocument) => {
-    const url = `https://prompt-notes.ai/p/${doc.id}`;
-    navigator.clipboard.writeText(url);
-    setSharedId(doc.id);
-    toast("シェアURLをコピーしました", "copy");
-    setTimeout(() => setSharedId(null), 1500);
   };
 
   const handleFork = async (doc: PromptDocument) => {
@@ -380,25 +373,24 @@ function FeedContent() {
                 <GitFork className="w-3.5 h-3.5" /> Fork
               </button>
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="grid grid-cols-3 gap-2 mt-2">
               <button
                 onClick={() => handleDownload(selected)}
-                className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]"
+                className="py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]"
               >
                 <Download className="w-3.5 h-3.5" /> .md
               </button>
               <button
-                onClick={() => handleShare(selected)}
-                className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]"
+                onClick={() => { setSelected(null); setShareDoc(selected); }}
+                className="py-2.5 bg-[#4F46E5] text-white rounded-xl text-xs font-medium flex items-center justify-center gap-1"
               >
-                {sharedId === selected.id ? <Check className="w-3.5 h-3.5 text-[#4F46E5]" /> : <Share2 className="w-3.5 h-3.5" />}
-                Share
+                SNSで共有
               </button>
               <a
                 href={`/p/${selected.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb] no-underline text-[#1a1a1a] dark:text-[#e5e7eb]"
+                className="py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb] no-underline text-[#1a1a1a] dark:text-[#e5e7eb]"
               >
                 <ExternalLink className="w-3.5 h-3.5" /> 詳細
               </a>
@@ -406,6 +398,16 @@ function FeedContent() {
             <button onClick={() => setSelected(null)} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
           </div>
         </div>
+      )}
+
+      {/* SNS Share Sheet */}
+      {shareDoc && (
+        <ShareSheet
+          url={`https://prompt-notes.ai/p/${shareDoc.id}`}
+          title={shareDoc.title || "Prompt"}
+          tags={shareDoc.tags}
+          onClose={() => setShareDoc(null)}
+        />
       )}
     </div>
   );

@@ -191,6 +191,7 @@ export default async function PublicPromptPage({ params }: Props) {
         <PublicPromptClient
           id={doc.id}
           title={doc.title}
+          tags={doc.tags}
           likeCount={doc.likeCount}
           forkCount={doc.forkCount}
           bodyMd={doc.bodyMd}

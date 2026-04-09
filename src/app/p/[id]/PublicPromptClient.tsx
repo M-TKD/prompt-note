@@ -1,52 +1,37 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Heart, GitFork, Share2, Copy, Check, Link, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Heart, GitFork, Copy, Check } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
+import { ShareButton } from "@/components/ShareSheet";
 import { useStore } from "@/lib/use-store";
 import { useAuth } from "@/lib/auth-context";
 
 type Props = {
   id: string;
   title: string;
+  tags?: string[];
   likeCount: number;
   forkCount: number;
   bodyMd: string;
 };
 
-export function PublicPromptClient({ id, title, likeCount, forkCount, bodyMd }: Props) {
+export function PublicPromptClient({ id, title, tags = [], likeCount, forkCount, bodyMd }: Props) {
   const hybridStore = useStore();
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [currentLikes, setCurrentLikes] = useState(likeCount);
   const [forking, setForking] = useState(false);
-  const shareRef = useRef<HTMLDivElement>(null);
 
   const pageUrl =
     typeof window !== "undefined"
       ? window.location.href
       : `https://prompt-notes.ai/p/${id}`;
 
-  // Check initial like state
   useEffect(() => {
     hybridStore.isLiked(id).then(setLiked);
   }, [hybridStore, id]);
-
-  // Close share panel on outside click
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (shareRef.current && !shareRef.current.contains(e.target as Node)) {
-        setShareOpen(false);
-      }
-    }
-    if (shareOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [shareOpen]);
 
   async function handleToggleLike() {
     const nowLiked = await hybridStore.toggleLike(id);
@@ -54,34 +39,12 @@ export function PublicPromptClient({ id, title, likeCount, forkCount, bodyMd }: 
     setCurrentLikes((prev) => prev + (nowLiked ? 1 : -1));
   }
 
-  async function handleCopyLink() {
-    try {
-      await navigator.clipboard.writeText(pageUrl);
-      setLinkCopied(true);
-      setTimeout(() => {
-        setLinkCopied(false);
-        setShareOpen(false);
-      }, 1500);
-    } catch {
-      // ignore
-    }
-  }
-
-  function handleShareX() {
-    const text = `${title}\n`;
-    const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(pageUrl)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-    setShareOpen(false);
-  }
-
   async function handleCopyPrompt() {
     try {
       await navigator.clipboard.writeText(bodyMd);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
 
   async function handleFork() {
@@ -139,39 +102,8 @@ export function PublicPromptClient({ id, title, likeCount, forkCount, bodyMd }: 
           {forking ? "フォーク中..." : "フォークして使う"}
         </button>
 
-        {/* Share button with dropdown */}
-        <div className="relative" ref={shareRef}>
-          <button
-            onClick={() => setShareOpen((prev) => !prev)}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-[#252525] hover:bg-gray-50 dark:hover:bg-[#303030] transition-colors"
-          >
-            <Share2 size={16} />
-            共有
-          </button>
-
-          {shareOpen && (
-            <div className="absolute right-0 bottom-full mb-2 w-56 bg-white dark:bg-[#252525] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden z-20">
-              <button
-                onClick={handleShareX}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#303030] transition-colors"
-              >
-                <X size={16} />
-                Xでシェア
-              </button>
-              <button
-                onClick={handleCopyLink}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#303030] transition-colors border-t border-gray-100 dark:border-gray-700"
-              >
-                {linkCopied ? (
-                  <Check size={16} className="text-green-500" />
-                ) : (
-                  <Link size={16} />
-                )}
-                {linkCopied ? "コピーしました" : "リンクをコピー"}
-              </button>
-            </div>
-          )}
-        </div>
+        {/* Share button with SNS dropdown */}
+        <ShareButton url={pageUrl} title={title} tags={tags} />
       </div>
     </div>
   );
