@@ -104,7 +104,11 @@ export default function HomePage() {
   }
 
   return (
-    <div className="px-6 pt-14">
+    <div className="px-6 pt-8">
+      {/* Logo */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-horizontal.png" alt="PromptNotes" className="h-5 mb-8 opacity-40 dark:invert dark:opacity-30" />
+
       {/* Header */}
       <div className="mb-8 flex items-end justify-between">
         <div>
