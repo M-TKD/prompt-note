@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG, SAMPLE_PROMPTS } from "@/lib/types";
-import { Heart, GitFork, Copy, Check, Share2, ExternalLink, Search, X, TrendingUp, Sparkles } from "lucide-react";
+import { Heart, GitFork, Copy, Check, Share2, ExternalLink, Search, X, TrendingUp, Sparkles, Download } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
 
@@ -120,6 +120,20 @@ function FeedContent() {
     setCopiedId(doc.id);
     toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 1500);
+  };
+
+  const handleDownload = (doc: PromptDocument) => {
+    const filename = (doc.title || "prompt").replace(/[\/\\:*?"<>|]/g, "_") + ".md";
+    const blob = new Blob([doc.bodyMd], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("ダウンロードしました");
   };
 
   const handleShare = (doc: PromptDocument) => {
@@ -368,11 +382,17 @@ function FeedContent() {
             </div>
             <div className="flex gap-2 mt-2">
               <button
+                onClick={() => handleDownload(selected)}
+                className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]"
+              >
+                <Download className="w-3.5 h-3.5" /> .md
+              </button>
+              <button
                 onClick={() => handleShare(selected)}
                 className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]"
               >
                 {sharedId === selected.id ? <Check className="w-3.5 h-3.5 text-[#4F46E5]" /> : <Share2 className="w-3.5 h-3.5" />}
-                Share URL
+                Share
               </button>
               <a
                 href={`/p/${selected.id}`}
@@ -380,7 +400,7 @@ function FeedContent() {
                 rel="noopener noreferrer"
                 className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb] no-underline text-[#1a1a1a] dark:text-[#e5e7eb]"
               >
-                <ExternalLink className="w-3.5 h-3.5" /> 詳細ページ
+                <ExternalLink className="w-3.5 h-3.5" /> 詳細
               </a>
             </div>
             <button onClick={() => setSelected(null)} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
