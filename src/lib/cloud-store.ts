@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { PromptDocument, TemplateVariable, Collection, DocumentVersion, SAMPLE_PROMPTS } from "./types";
+import { PromptDocument, TemplateVariable, Collection, DocumentVersion } from "./types";
 
 // SupabaseのDB行 → DocumentVersion型に変換
 function toVersion(row: Record<string, unknown>): DocumentVersion {
@@ -125,7 +125,7 @@ export const cloudStore = {
       error = null;
     }
 
-    const dbDocs = (data || []).map((row) => {
+    return (data || []).map((row) => {
       const doc = toDocument(row);
       const profile = (row as Record<string, unknown>).profiles as { display_name: string | null; avatar_url: string | null } | null;
       if (profile) {
@@ -136,35 +136,6 @@ export const cloudStore = {
       }
       return doc;
     });
-
-    // Remove any DB docs that came from seed data (userId "sample")
-    // to avoid duplicates, then merge with fresh SAMPLE_PROMPTS
-    const userDocs = dbDocs.filter((d) => d.userId !== "sample");
-
-    const sampleDocs: PromptDocument[] = SAMPLE_PROMPTS
-      .filter((s) => {
-        if (category && category !== "すべて") {
-          return s.tags.includes(category);
-        }
-        return true;
-      })
-      .map((s, i) => ({
-        ...s,
-        id: `sample-${i}`,
-        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - i * 3600000).toISOString(),
-        author: { name: "PromptNotes Official" },
-      }));
-
-    const merged = [...userDocs, ...sampleDocs];
-
-    if (sort === "popular") {
-      merged.sort((a, b) => b.likeCount - a.likeCount);
-    } else {
-      merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    return merged;
   },
 
   // -----------------------------------------------

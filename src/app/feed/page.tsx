@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
-import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
+import { PromptDocument, CATEGORIES, TYPE_CONFIG, SAMPLE_PROMPTS } from "@/lib/types";
 import { Heart, GitFork, Copy, Check, Share2, ExternalLink, Search, X } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
@@ -39,7 +39,29 @@ function FeedContent() {
     setLoading(true);
     try {
       hybridStore.ensureSeedData();
-      const documents = await hybridStore.getPublicDocuments(sort, category);
+      const dbDocuments = await hybridStore.getPublicDocuments(sort, category);
+
+      // Always merge SAMPLE_PROMPTS (filtered by category) to guarantee display
+      const sampleDocs: PromptDocument[] = SAMPLE_PROMPTS
+        .filter((s) => !category || category === "すべて" || s.tags.includes(category))
+        .map((s, i) => ({
+          ...s,
+          id: `sample-${i}`,
+          createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+          updatedAt: new Date(Date.now() - i * 3600000).toISOString(),
+          author: { name: "PromptNotes Official" },
+        }));
+
+      // Deduplicate: remove any DB docs that overlap with samples (by userId or title match)
+      const sampleTitles = new Set(sampleDocs.map(s => s.title));
+      const uniqueDbDocs = dbDocuments.filter(d => !sampleTitles.has(d.title) && !d.id.startsWith("sample-"));
+
+      let documents = [...uniqueDbDocs, ...sampleDocs];
+      if (sort === "popular") {
+        documents.sort((a, b) => b.likeCount - a.likeCount);
+      } else {
+        documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
       setDocs(documents);
 
       // Resolve liked state for all documents
@@ -74,9 +96,8 @@ function FeedContent() {
     if (nowLiked) {
       toast("いいねしました");
     }
-    // Refetch documents to update like counts
-    const documents = await hybridStore.getPublicDocuments(sort, category);
-    setDocs(documents);
+    // Refetch to update like counts
+    fetchDocs();
   };
 
   const handleCopy = (doc: PromptDocument) => {
