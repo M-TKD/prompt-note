@@ -147,9 +147,9 @@ function FeedContent() {
   };
 
   return (
-    <div className="px-6 pt-14">
+    <div className="px-4 md:px-6 pt-14">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Explore</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Explore</h1>
         <p className="text-xs text-[#9ca3af] mt-1 font-mono">Community prompts</p>
       </div>
 
@@ -177,14 +177,14 @@ function FeedContent() {
             <Sparkles className="w-3.5 h-3.5 text-[#4F46E5]" />
             <span className="text-[11px] font-bold text-[#1a1a1a] dark:text-white tracking-wide">PICKUP</span>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-6 px-6">
+          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 md:-mx-6 md:px-6">
             {featuredDocs.map((doc, i) => {
               const title = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 30) || "Untitled";
               return (
                 <div
                   key={`featured-${doc.id}`}
                   onClick={() => setSelected(doc)}
-                  className={`shrink-0 w-[200px] p-4 rounded-2xl bg-gradient-to-br ${FEATURED_GRADIENTS[i % FEATURED_GRADIENTS.length]} cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all`}
+                  className={`shrink-0 w-[200px] md:w-[240px] p-4 rounded-2xl bg-gradient-to-br ${FEATURED_GRADIENTS[i % FEATURED_GRADIENTS.length]} cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all`}
                 >
                   <div className="flex items-center gap-1.5 mb-2">
                     <TrendingUp className="w-3 h-3 text-white/70" />
@@ -264,7 +264,7 @@ function FeedContent() {
           <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">{searchQuery ? `"${searchQuery}" に一致するプロンプトが見つかりません` : "Be the first"}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5 pb-24">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 pb-24">
           {filteredDocs.map((doc) => {
             const displayTitle = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 30) || "Untitled";
             const bodyPreview = doc.bodyMd.replace(/^#+\s*.*\n?/, "").replace(/\n/g, " ").slice(0, 50);
