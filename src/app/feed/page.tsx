@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG, SAMPLE_PROMPTS } from "@/lib/types";
-import { Heart, GitFork, Copy, Check, Share2, ExternalLink, Search, X } from "lucide-react";
+import { Heart, GitFork, Copy, Check, Share2, ExternalLink, Search, X, TrendingUp, Sparkles } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
 
@@ -23,6 +23,21 @@ function FeedContent() {
   const [loading, setLoading] = useState(true);
   const [sharedId, setSharedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Top 5 most popular for the featured banner
+  const featuredDocs = useMemo(() => {
+    return [...docs]
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .slice(0, 5);
+  }, [docs]);
+
+  const FEATURED_GRADIENTS = [
+    "from-[#4F46E5] to-[#7C3AED]",
+    "from-[#059669] to-[#0D9488]",
+    "from-[#D97706] to-[#EA580C]",
+    "from-[#2563EB] to-[#4F46E5]",
+    "from-[#DB2777] to-[#9333EA]",
+  ];
 
   const filteredDocs = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -148,6 +163,42 @@ function FeedContent() {
         )}
       </div>
 
+      {/* Featured / Pickup Banner */}
+      {!searchQuery && !loading && featuredDocs.length > 0 && (
+        <div className="mb-5">
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#4F46E5]" />
+            <span className="text-[11px] font-bold text-[#1a1a1a] dark:text-white tracking-wide">PICKUP</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-6 px-6">
+            {featuredDocs.map((doc, i) => {
+              const title = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 30) || "Untitled";
+              return (
+                <div
+                  key={`featured-${doc.id}`}
+                  onClick={() => setSelected(doc)}
+                  className={`shrink-0 w-[200px] p-4 rounded-2xl bg-gradient-to-br ${FEATURED_GRADIENTS[i % FEATURED_GRADIENTS.length]} cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all`}
+                >
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <TrendingUp className="w-3 h-3 text-white/70" />
+                    <span className="text-[9px] font-mono text-white/70 uppercase tracking-wider">#{i + 1} Popular</span>
+                  </div>
+                  <p className="text-white font-bold text-[13px] leading-tight line-clamp-2 mb-2">{title}</p>
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1 text-white/80 text-[10px]">
+                      <Heart className="w-3 h-3" /> {doc.likeCount}
+                    </span>
+                    {doc.tags[0] && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/20 text-white/90">{doc.tags[0]}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Categories with count badges */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
         {CATEGORIES.map((cat) => {
@@ -206,64 +257,60 @@ function FeedContent() {
           <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">{searchQuery ? `"${searchQuery}" に一致するプロンプトが見つかりません` : "Be the first"}</p>
         </div>
       ) : (
-        <div className="space-y-3 pb-24">
+        <div className="grid grid-cols-2 gap-2.5 pb-24">
           {filteredDocs.map((doc) => {
-            const displayTitle = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 40) || "Untitled";
-            const bodyPreview = doc.bodyMd.replace(/^#+\s*.*\n?/, "").replace(/\n/g, " ").slice(0, 80);
+            const displayTitle = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 30) || "Untitled";
+            const bodyPreview = doc.bodyMd.replace(/^#+\s*.*\n?/, "").replace(/\n/g, " ").slice(0, 50);
             return (
               <div
                 key={doc.id}
                 onClick={() => setSelected(doc)}
-                className="p-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] bg-white dark:bg-[#141414] cursor-pointer hover:border-[#4F46E5]/30 active:bg-[#fafafa] dark:active:bg-[#1a1a1a]"
+                className="p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] bg-white dark:bg-[#141414] cursor-pointer hover:border-[#4F46E5]/30 active:bg-[#fafafa] dark:active:bg-[#1a1a1a] flex flex-col"
               >
-                {/* Title + Author row */}
-                <div className="flex items-start gap-3 mb-2">
-                  {/* Icon */}
-                  <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-[#4F46E5] text-sm font-bold">{TYPE_CONFIG[doc.type].icon}</span>
+                {/* Icon + Type */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center shrink-0">
+                    <span className="text-[#4F46E5] text-xs font-bold">{TYPE_CONFIG[doc.type].icon}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-[#1a1a1a] dark:text-white truncate">{displayTitle}</p>
-                    <p className="text-xs text-[#9ca3af] line-clamp-2 mt-0.5 leading-relaxed">{bodyPreview}</p>
-                  </div>
+                  {doc.tags[0] && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#f5f5f5] dark:bg-[#222] text-[#6b7280] dark:text-[#9ca3af] font-medium truncate">
+                      {doc.tags[0]}
+                    </span>
+                  )}
                 </div>
 
-                {/* Bottom: tags + stats */}
-                <div className="flex items-center gap-2 mt-3">
-                  {/* Category tags */}
-                  {doc.tags.slice(0, 2).map((t) => (
-                    <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-[#f5f5f5] dark:bg-[#222] text-[#6b7280] dark:text-[#9ca3af] font-medium">
-                      {t}
-                    </span>
-                  ))}
+                {/* Title */}
+                <p className="font-bold text-[12px] text-[#1a1a1a] dark:text-white line-clamp-2 leading-snug mb-1">{displayTitle}</p>
 
-                  {/* Author */}
+                {/* Preview */}
+                <p className="text-[10px] text-[#9ca3af] line-clamp-2 leading-relaxed mb-auto">{bodyPreview}</p>
+
+                {/* Footer: author + stats */}
+                <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[#f5f5f5] dark:border-[#222]">
                   {doc.author && (
-                    <span className="text-[10px] text-[#9ca3af] dark:text-[#6b7280] font-mono ml-auto mr-2 truncate max-w-[100px]">
-                      by {doc.author.name}
+                    <span className="text-[9px] text-[#b0b0b0] dark:text-[#555] font-mono truncate max-w-[60px]">
+                      {doc.author.name.split(" ")[0]}
                     </span>
                   )}
-
-                  {/* Like badge */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }}
-                    className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      likedIds.has(doc.id)
-                        ? "bg-[#4F46E5]/10 text-[#4F46E5]"
-                        : "bg-[#f5f5f5] dark:bg-[#222] text-[#9ca3af] hover:text-[#4F46E5]"
-                    }`}
-                  >
-                    <Heart className={`w-3 h-3 ${likedIds.has(doc.id) ? "fill-current" : ""}`} />
-                    {doc.likeCount}
-                  </button>
-
-                  {/* Fork badge */}
-                  {doc.forkCount > 0 && (
-                    <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[#ECFDF5] dark:bg-[#065F46]/20 text-[#059669] font-medium">
-                      <GitFork className="w-3 h-3" />
-                      {doc.forkCount}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }}
+                      className={`flex items-center gap-0.5 text-[9px] font-medium ${
+                        likedIds.has(doc.id)
+                          ? "text-[#4F46E5]"
+                          : "text-[#c0c0c0] dark:text-[#555] hover:text-[#4F46E5]"
+                      }`}
+                    >
+                      <Heart className={`w-2.5 h-2.5 ${likedIds.has(doc.id) ? "fill-current" : ""}`} />
+                      {doc.likeCount}
+                    </button>
+                    {doc.forkCount > 0 && (
+                      <span className="flex items-center gap-0.5 text-[9px] text-[#059669] font-medium">
+                        <GitFork className="w-2.5 h-2.5" />
+                        {doc.forkCount}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
