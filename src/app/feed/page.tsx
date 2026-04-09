@@ -147,7 +147,7 @@ function FeedContent() {
   };
 
   return (
-    <div className="px-4 md:px-6 pt-14">
+    <div className="px-4 md:px-2 pt-14">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Explore</h1>
         <p className="text-xs text-[#9ca3af] mt-1 font-mono">Community prompts</p>
@@ -184,7 +184,7 @@ function FeedContent() {
                 <div
                   key={`featured-${doc.id}`}
                   onClick={() => setSelected(doc)}
-                  className={`shrink-0 w-[200px] md:w-[240px] p-4 rounded-2xl bg-gradient-to-br ${FEATURED_GRADIENTS[i % FEATURED_GRADIENTS.length]} cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all`}
+                  className={`shrink-0 w-[200px] md:w-[280px] lg:w-[300px] p-4 md:p-5 rounded-2xl bg-gradient-to-br ${FEATURED_GRADIENTS[i % FEATURED_GRADIENTS.length]} cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all`}
                 >
                   <div className="flex items-center gap-1.5 mb-2">
                     <TrendingUp className="w-3 h-3 text-white/70" />
@@ -264,7 +264,7 @@ function FeedContent() {
           <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">{searchQuery ? `"${searchQuery}" に一致するプロンプトが見つかりません` : "Be the first"}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 pb-24">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 md:gap-4 pb-24">
           {filteredDocs.map((doc) => {
             const displayTitle = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 30) || "Untitled";
             const bodyPreview = doc.bodyMd.replace(/^#+\s*.*\n?/, "").replace(/\n/g, " ").slice(0, 50);

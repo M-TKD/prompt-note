@@ -81,7 +81,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ToastProvider>
-            <main className="pb-16 max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto">
+            <main className="pb-16 max-w-lg md:max-w-none md:px-8 lg:px-16 mx-auto">
               {children}
             </main>
             <BottomNav />

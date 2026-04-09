@@ -17,7 +17,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1a1a1a] border-t border-[#f0f0f0] dark:border-[#333] z-50">
-      <div className="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex items-center justify-around py-1.5">
+      <div className="max-w-lg md:max-w-none md:px-8 lg:px-16 mx-auto flex items-center justify-around py-1.5">
         {tabs.map((tab) => {
           const isActive = tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
           const Icon = tab.icon;
