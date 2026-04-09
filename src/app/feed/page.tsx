@@ -147,7 +147,7 @@ function FeedContent() {
   };
 
   return (
-    <div className="px-4 md:px-2 pt-14">
+    <div className="px-4 pt-14 md:w-screen md:relative md:left-1/2 md:-translate-x-1/2 md:px-10 lg:px-16">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Explore</h1>
         <p className="text-xs text-[#9ca3af] mt-1 font-mono">Community prompts</p>
@@ -177,7 +177,7 @@ function FeedContent() {
             <Sparkles className="w-3.5 h-3.5 text-[#4F46E5]" />
             <span className="text-[11px] font-bold text-[#1a1a1a] dark:text-white tracking-wide">PICKUP</span>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 md:-mx-6 md:px-6">
+          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 md:-mx-10 md:px-10 lg:-mx-16 lg:px-16">
             {featuredDocs.map((doc, i) => {
               const title = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 30) || "Untitled";
               return (
