@@ -294,13 +294,34 @@ function EditorContent() {
         )}
         {/* Send to AI — prominent position */}
         {(isPrompt || isTemplate) && hasContent && (
-          <button
-            onClick={() => setShowSendToAI(true)}
-            className="text-[11px] flex items-center gap-1.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] px-3 py-1 rounded-full font-medium"
-          >
-            <Send className="w-3 h-3" />
-            Send to AI
-          </button>
+          <>
+            <button
+              onClick={() => setShowSendToAI(true)}
+              className="text-[11px] flex items-center gap-1.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] px-3 py-1 rounded-full font-medium"
+            >
+              <Send className="w-3 h-3" />
+              Send to AI
+            </button>
+            <button
+              onClick={() => {
+                const filename = (title || "prompt").replace(/[\/\\:*?"<>|]/g, "_") + ".md";
+                const blob = new Blob([bodyMd], { type: "text/markdown;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast("ダウンロードしました");
+              }}
+              className="text-[11px] flex items-center gap-1.5 border border-[#e5e7eb] dark:border-[#333] text-[#6b7280] dark:text-[#9ca3af] px-3 py-1 rounded-full font-medium hover:bg-[#f5f5f5] dark:hover:bg-[#222]"
+            >
+              <Download className="w-3 h-3" />
+              .md
+            </button>
+          </>
         )}
       </div>
 
