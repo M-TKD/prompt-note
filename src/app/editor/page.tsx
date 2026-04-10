@@ -22,10 +22,13 @@ function EditorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const hybridStore = useStore();
+  const storeRef = useRef(hybridStore);
+  storeRef.current = hybridStore;
   const { toast } = useToast();
   const editId = searchParams.get("id");
   const mode = searchParams.get("mode");
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingRef = useRef(false);
 
   const [title, setTitle] = useState("");
   const [bodyMd, setBodyMd] = useState("");
@@ -51,7 +54,7 @@ function EditorContent() {
   useEffect(() => {
     const loadDocument = async () => {
       if (editId) {
-        const doc = await hybridStore.getDocument(editId);
+        const doc = await storeRef.current.getDocument(editId);
         if (doc) {
           setTitle(doc.title || "");
           setBodyMd(doc.bodyMd);
@@ -60,8 +63,7 @@ function EditorContent() {
           setTags(doc.tags);
         }
       } else if (!mode) {
-        // Check for saved draft
-        const draft = hybridStore.getDraft();
+        const draft = storeRef.current.getDraft();
         if (draft && draft.bodyMd) {
           setTitle(draft.title);
           setBodyMd(draft.bodyMd);
@@ -73,7 +75,7 @@ function EditorContent() {
       }
     };
     loadDocument();
-  }, [editId, mode, hybridStore]);
+  }, [editId, mode]);
 
   // Auto-save draft every 3 seconds (only for new docs)
   useEffect(() => {
@@ -81,11 +83,11 @@ function EditorContent() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     if (bodyMd.trim()) {
       autoSaveTimer.current = setTimeout(() => {
-        hybridStore.saveDraft({ title, bodyMd, type: docType, tags });
+        storeRef.current.saveDraft({ title, bodyMd, type: docType, tags });
       }, 3000);
     }
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-  }, [title, bodyMd, docType, tags, editId, hybridStore]);
+  }, [title, bodyMd, docType, tags, editId]);
 
   // Warn about unsaved changes
   useEffect(() => {
@@ -108,7 +110,10 @@ function EditorContent() {
 
   const handleSave = useCallback(async () => {
     if (!hasContent) return;
+    if (savingRef.current) return; // Prevent double save
+    savingRef.current = true;
     try {
+      const s = storeRef.current;
       const data = {
         userId: "local",
         title: title || null,
@@ -118,12 +123,11 @@ function EditorContent() {
         tags,
       };
       if (editId) {
-        // Save version snapshot before updating (cloud only)
-        await hybridStore.saveVersion(editId, title || null, bodyMd);
-        await hybridStore.update(editId, data);
+        await s.saveVersion(editId, title || null, bodyMd);
+        await s.update(editId, data);
       } else {
-        const created = await hybridStore.create(data);
-        hybridStore.clearDraft();
+        const created = await s.create(data);
+        s.clearDraft();
         if (created?.id) {
           router.replace(`/editor?id=${created.id}`);
         }
@@ -133,8 +137,10 @@ function EditorContent() {
       setTimeout(() => router.push("/"), 500);
     } catch {
       toast("エラーが発生しました", "error");
+    } finally {
+      savingRef.current = false;
     }
-  }, [editId, title, bodyMd, docType, visibility, tags, isNote, hasContent, router, hybridStore, toast]);
+  }, [editId, title, bodyMd, docType, visibility, tags, isNote, hasContent, router, toast]);
 
   const handlePromote = (newType: DocumentType) => {
     setDocType(newType);
@@ -420,7 +426,7 @@ function EditorContent() {
               <FolderPlus className="w-3.5 h-3.5" />
             </button>
           )}
-          {editId && hybridStore.isCloud && (
+          {editId && storeRef.current.isCloud && (
             <button onClick={() => setShowVersionHistory(true)} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
               <History className="w-3.5 h-3.5" />
             </button>
