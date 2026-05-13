@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import MarkdownIt from "markdown-it";
 import markdownItAnchor from "markdown-it-anchor";
 import markdownItTaskLists from "markdown-it-task-lists";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 
 const md = new MarkdownIt({
   html: true,
@@ -50,9 +50,6 @@ const ALLOWED_ATTR = [
 
 function renderMarkdown(content: string): string {
   const rawHtml = md.render(content);
-  if (typeof window === "undefined") {
-    return rawHtml;
-  }
   return DOMPurify.sanitize(rawHtml, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
