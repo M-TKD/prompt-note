@@ -36,7 +36,7 @@ function EditorContent() {
   const [visibility, setVisibility] = useState<DocumentVisibility>("private");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
+  const [viewMode, setViewMode] = useState<"edit" | "split" | "preview">("edit");
   const [showSendToAI, setShowSendToAI] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
   const [showAIReview, setShowAIReview] = useState(false);
@@ -222,13 +222,27 @@ function EditorContent() {
           {draftRestored && (
             <span className="text-[9px] text-[#4F46E5] font-mono">draft restored</span>
           )}
-          {/* Quick actions in header */}
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="text-[10px] px-2 py-0.5 rounded font-mono text-[#9ca3af] hover:text-[#1a1a1a] dark:hover:text-white"
-          >
-            {showPreview ? "Edit" : "Preview"}
-          </button>
+          {/* View mode toggle (Edit / Split / Preview) */}
+          <div className="flex items-center text-[10px] font-mono rounded bg-[#f5f5f5] dark:bg-[#222] p-0.5">
+            <button
+              onClick={() => setViewMode("edit")}
+              className={`px-2 py-0.5 rounded ${viewMode === "edit" ? "bg-white dark:bg-[#333] text-[#1a1a1a] dark:text-white" : "text-[#9ca3af]"}`}
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => setViewMode("split")}
+              className={`hidden lg:inline-flex px-2 py-0.5 rounded ${viewMode === "split" ? "bg-white dark:bg-[#333] text-[#1a1a1a] dark:text-white" : "text-[#9ca3af]"}`}
+            >
+              Split
+            </button>
+            <button
+              onClick={() => setViewMode("preview")}
+              className={`px-2 py-0.5 rounded ${viewMode === "preview" ? "bg-white dark:bg-[#333] text-[#1a1a1a] dark:text-white" : "text-[#9ca3af]"}`}
+            >
+              Preview
+            </button>
+          </div>
           {hasContent && (
             <button onClick={() => setShowAIReview(true)} className="text-[10px] px-1.5 py-0.5 rounded font-mono text-[#6b7280] hover:text-[#4F46E5]">
               AI
@@ -349,27 +363,42 @@ function EditorContent() {
       </div>
 
       {/* Editor / Preview */}
-      <div className="flex-1 overflow-auto">
-        {showPreview ? (
-          <div className="p-6 markdown-preview">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {(viewMode === "edit" || viewMode === "split") && (
+          <div
+            className={
+              viewMode === "split"
+                ? "flex-1 lg:flex-none lg:w-1/2 overflow-auto lg:border-r lg:border-[#f0f0f0] dark:lg:border-[#333]"
+                : "flex-1 overflow-auto"
+            }
+          >
+            <textarea
+              ref={textareaRef}
+              value={bodyMd}
+              onChange={(e) => setBodyMd(e.target.value)}
+              placeholder={isQuickMemo ? "Write something..." : "Write in Markdown...\n\nUse {{variable}} for template variables"}
+              className="w-full h-full p-6 outline-none resize-none font-mono text-sm leading-relaxed text-[#404040] dark:text-[#e5e7eb] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent"
+              autoFocus
+            />
+          </div>
+        )}
+        {(viewMode === "preview" || viewMode === "split") && (
+          <div
+            className={
+              viewMode === "split"
+                ? "hidden lg:block lg:w-1/2 overflow-auto p-6 markdown-preview"
+                : "flex-1 overflow-auto p-6 markdown-preview"
+            }
+          >
             <MarkdownPreview content={bodyMd} />
           </div>
-        ) : (
-          <textarea
-            ref={textareaRef}
-            value={bodyMd}
-            onChange={(e) => setBodyMd(e.target.value)}
-            placeholder={isQuickMemo ? "Write something..." : "Write in Markdown...\n\nUse {{variable}} for template variables"}
-            className="w-full h-full p-6 outline-none resize-none font-mono text-sm leading-relaxed text-[#404040] dark:text-[#e5e7eb] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent"
-            autoFocus
-          />
         )}
       </div>
 
       {/* Unified Toolbar — keyboard-attached, single row */}
       <div className="border-t border-[#f0f0f0] dark:border-[#333] bg-white dark:bg-[#1a1a1a]">
-        {/* Row 1: Markdown symbols (scrollable) — always visible */}
-        {!showPreview && (
+        {/* Row 1: Markdown symbols (scrollable) — visible in edit & split */}
+        {viewMode !== "preview" && (
           <div className="flex items-center px-1 py-0.5 overflow-x-auto no-scrollbar">
             {["#", "*", "_", "+", "-", "`", "<", ">", "!", "[", "]", "(", ")", "|", "~", "{{"].map((char) => (
               <button
@@ -384,7 +413,7 @@ function EditorContent() {
         )}
         {/* Row 2: Semantic + actions (scrollable) */}
         <div className="flex items-center px-1 py-1 overflow-x-auto no-scrollbar gap-0.5 border-t border-[#f5f5f5] dark:border-[#333]">
-          {!showPreview && (
+          {viewMode !== "preview" && (
             <>
               {[
                 { icon: <Heading1 className="w-3.5 h-3.5" />, action: () => insertMarkdown("# ") },

@@ -1,63 +1,72 @@
 "use client";
 
-// Lightweight markdown preview (no heavy dependencies)
+import { useMemo } from "react";
+import MarkdownIt from "markdown-it";
+import markdownItAnchor from "markdown-it-anchor";
+import markdownItTaskLists from "markdown-it-task-lists";
+import DOMPurify from "dompurify";
+
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  breaks: false,
+  typographer: false,
+})
+  .use(markdownItAnchor, { permalink: false })
+  .use(markdownItTaskLists, { enabled: true, label: true });
+
+const defaultLinkRender =
+  md.renderer.rules.link_open ||
+  function (tokens, idx, options, _env, self) {
+    return self.renderToken(tokens, idx, options);
+  };
+
+md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+  const token = tokens[idx];
+  const href = token.attrGet("href") || "";
+  const isExternal = /^https?:\/\//i.test(href);
+  if (isExternal) {
+    token.attrSet("target", "_blank");
+    token.attrSet("rel", "noopener noreferrer");
+  }
+  return defaultLinkRender(tokens, idx, options, env, self);
+};
+
+const ALLOWED_TAGS = [
+  "a", "abbr", "address", "article", "aside", "b", "blockquote", "br",
+  "caption", "cite", "code", "col", "colgroup", "dd", "details", "dfn",
+  "div", "dl", "dt", "em", "figcaption", "figure", "footer", "h1", "h2",
+  "h3", "h4", "h5", "h6", "header", "hr", "i", "img", "input", "ins",
+  "kbd", "li", "mark", "nav", "ol", "p", "pre", "q", "s", "samp",
+  "section", "small", "span", "strong", "sub", "summary", "sup", "table",
+  "tbody", "td", "tfoot", "th", "thead", "time", "tr", "u", "ul", "var",
+];
+
+const ALLOWED_ATTR = [
+  "href", "title", "alt", "src", "class", "id", "target", "rel",
+  "type", "checked", "disabled", "open", "colspan", "rowspan",
+  "start", "value", "datetime", "lang", "dir",
+];
+
+function renderMarkdown(content: string): string {
+  const rawHtml = md.render(content);
+  if (typeof window === "undefined") {
+    return rawHtml;
+  }
+  return DOMPurify.sanitize(rawHtml, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    ALLOW_DATA_ATTR: false,
+    FORBID_ATTR: ["style", "onerror", "onload", "onclick"],
+  });
+}
+
 export function MarkdownPreview({ content }: { content: string }) {
-  const html = markdownToHtml(content);
+  const html = useMemo(() => renderMarkdown(content), [content]);
   return (
     <div
       className="markdown-preview"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
-}
-
-function markdownToHtml(md: string): string {
-  let html = escapeHtml(md);
-
-  // Code blocks (``` ... ```)
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-
-  // Headers
-  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-
-  // Bold & Italic
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-
-  // Inline code
-  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
-
-  // Blockquote
-  html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
-
-  // Horizontal rule
-  html = html.replace(/^---$/gm, '<hr>');
-
-  // Unordered list
-  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-
-  // Ordered list
-  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-
-  // Links
-  html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-
-  // Paragraphs (lines that aren't already wrapped)
-  html = html.replace(/^(?!<[hupblo]|<li|<hr|<pre)(.+)$/gm, '<p>$1</p>');
-
-  // Clean up extra newlines
-  html = html.replace(/\n{2,}/g, '\n');
-
-  return html;
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
