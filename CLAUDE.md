@@ -17,6 +17,11 @@
 - **Management API が最も信頼できるDB操作方法** — `POST https://api.supabase.com/v1/projects/{ref}/database/query` + Supabase access token
 - **テーブル構造はコードと一致させること** — 先にスキーマを定義してからコードを書く、またはコードに合わせてスキーマを作る。二重管理は事故の元
 
+#### v0.4.1 Markdownビューワー強化で学んだこと
+- **ブラウザ専用ライブラリはSSRで落ちる** — `dompurify` v3 はブラウザ前提で、Next.jsのサーバーレンダリング時にVercelビルドが失敗した。`isomorphic-dompurify` などSSR対応版を使うこと
+- **`@types/*` は本体が型を同梱していれば不要** — `dompurify` v3 は型同梱済み。`@types/dompurify` を追加すると型が競合してビルドが壊れる。`node_modules/<pkg>/package.json` の `"types"` フィールドを先に確認する
+- **ローカルで `next build` が完走しない環境ではSSR起因の不具合を見逃す** — フォント取得や環境変数不足でビルドが途中終了すると、ブラウザAPI依存の問題はVercelビルドで初めて発覚する。`window`/`document` 依存コードは特に注意
+
 #### 一般的な学び
 - **ユーザーは非エンジニア** — 手動操作を最小限にし、可能な限り自動化する
 - **ビルド確認は必ず行う** — コード変更後は `npx next build` でエラーチェック
