@@ -5,12 +5,23 @@ import MarkdownIt from "markdown-it";
 import markdownItAnchor from "markdown-it-anchor";
 import markdownItTaskLists from "markdown-it-task-lists";
 import DOMPurify from "isomorphic-dompurify";
+import hljs from "highlight.js/lib/common";
 
 const md = new MarkdownIt({
   html: true,
   linkify: true,
   breaks: false,
   typographer: false,
+  highlight: (str, lang) => {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return hljs.highlight(str, { language: lang, ignoreIllegals: true }).value;
+      } catch {
+        /* fall back to plain escaping */
+      }
+    }
+    return "";
+  },
 })
   .use(markdownItAnchor, { permalink: false })
   .use(markdownItTaskLists, { enabled: true, label: true });
