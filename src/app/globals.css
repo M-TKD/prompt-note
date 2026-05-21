@@ -47,6 +47,46 @@ body {
 .markdown-preview a { color: #4F46E5; text-decoration: none; border-bottom: 1px solid #c7d2fe; }
 .markdown-preview a:hover { border-bottom-color: #4F46E5; }
 
+/* GFM: tables */
+.markdown-preview table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.875rem; }
+.markdown-preview thead { background: #fafafa; }
+.markdown-preview th, .markdown-preview td { padding: 0.5rem 0.75rem; border: 1px solid #f0f0f0; text-align: left; color: #404040; }
+.markdown-preview th { font-weight: 600; color: #1a1a1a; }
+.markdown-preview tbody tr:nth-child(even) { background: #fafafa; }
+
+/* GFM: task lists */
+.markdown-preview ul.contains-task-list { padding-left: 0.25rem; list-style: none; }
+.markdown-preview .task-list-item { padding-left: 0; display: flex; align-items: flex-start; gap: 0.5rem; }
+.markdown-preview .task-list-item::before { content: none; }
+.markdown-preview .task-list-item-checkbox { margin-top: 0.4rem; accent-color: #4F46E5; }
+.markdown-preview .task-list-item label { color: #404040; line-height: 1.75; font-size: 0.9375rem; }
+
+/* GFM: strikethrough */
+.markdown-preview s, .markdown-preview del { color: #9ca3af; }
+
+/* Semantic HTML: details / summary */
+.markdown-preview details { border: 1px solid #f0f0f0; border-radius: 6px; padding: 0.5rem 0.875rem; margin: 0.75rem 0; background: #fafafa; }
+.markdown-preview details[open] { background: #fff; }
+.markdown-preview summary { cursor: pointer; font-weight: 600; color: #1a1a1a; font-size: 0.9375rem; padding: 0.125rem 0; outline: none; }
+.markdown-preview summary::marker { color: #9ca3af; }
+.markdown-preview details > *:not(summary) { margin-top: 0.5rem; }
+
+/* Semantic HTML: aside (callout) */
+.markdown-preview aside { background: #EEF2FF; border-left: 3px solid #4F46E5; padding: 0.75rem 1rem; margin: 0.75rem 0; border-radius: 0 6px 6px 0; color: #404040; font-size: 0.9375rem; }
+.markdown-preview aside p:last-child { margin-bottom: 0; }
+
+/* Semantic HTML: mark, kbd, sub, sup */
+.markdown-preview mark { background: #fef9c3; color: #1a1a1a; padding: 0 0.2rem; border-radius: 2px; }
+.markdown-preview kbd { display: inline-block; font-family: var(--font-mono); font-size: 0.75rem; background: #fafafa; color: #1a1a1a; border: 1px solid #e5e7eb; border-bottom-width: 2px; border-radius: 4px; padding: 0.05rem 0.4rem; line-height: 1.4; }
+.markdown-preview sub, .markdown-preview sup { font-size: 0.75em; }
+
+/* Semantic HTML: figure */
+.markdown-preview figure { margin: 0.75rem 0; }
+.markdown-preview figcaption { font-size: 0.8125rem; color: #9ca3af; text-align: center; margin-top: 0.25rem; font-family: var(--font-mono); }
+
+/* Images */
+.markdown-preview img { max-width: 100%; height: auto; border-radius: 4px; margin: 0.5rem 0; }
+
 textarea:focus { outline: none; }
 
 /* Dark mode */
@@ -62,6 +102,18 @@ textarea:focus { outline: none; }
 .dark .markdown-preview code { background: #1a1a1a; color: #e5e7eb; }
 .dark .markdown-preview hr { border-top-color: #333; }
 .dark .markdown-preview blockquote { color: #9ca3af; }
+.dark .markdown-preview thead { background: #1a1a1a; }
+.dark .markdown-preview th, .dark .markdown-preview td { border-color: #333; color: #9ca3af; }
+.dark .markdown-preview th { color: #e5e7eb; }
+.dark .markdown-preview tbody tr:nth-child(even) { background: #141414; }
+.dark .markdown-preview .task-list-item label { color: #9ca3af; }
+.dark .markdown-preview details { border-color: #333; background: #141414; }
+.dark .markdown-preview details[open] { background: #1a1a1a; }
+.dark .markdown-preview summary { color: #e5e7eb; }
+.dark .markdown-preview aside { background: rgba(79, 70, 229, 0.12); color: #d1d5db; }
+.dark .markdown-preview mark { background: #78350f; color: #fef9c3; }
+.dark .markdown-preview kbd { background: #1a1a1a; color: #e5e7eb; border-color: #333; }
+.dark .markdown-preview figcaption { color: #6b7280; }
 
 /* Dark mode - input & form elements */
 .dark input, .dark textarea { color: #e5e7eb; }
