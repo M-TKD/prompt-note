@@ -17,6 +17,12 @@
 - **Management API が最も信頼できるDB操作方法** — `POST https://api.supabase.com/v1/projects/{ref}/database/query` + Supabase access token
 - **テーブル構造はコードと一致させること** — 先にスキーマを定義してからコードを書く、またはコードに合わせてスキーマを作る。二重管理は事故の元
 
+#### v0.4.1 Markdownビューワー強化で学んだこと
+- **依存を追加・変更したら必ず `next build` を実行する** — `tsc --noEmit` はバンドル段階の失敗を検出できない。`isomorphic-dompurify` に切り替えた際に `next build` を回さずプッシュし、Vercelビルドが2回失敗した
+- **`isomorphic-dompurify` は使わない** — 内部で `jsdom` を取り込み、Next.js(Turbopack)ビルドで失敗する。`dompurify` はブラウザ専用なので、サニタイズはクライアント専用にする方式が安全：`import("dompurify")` を `useEffect` 内で動的importし、サーバーは `markdown-it` の `html: false` でHTMLをエスケープした安全な状態で出力する（サーバー側はサニタイザー不要）
+- **`@types/*` は本体が型を同梱していれば不要** — `dompurify` v3 は型同梱済み。`@types/dompurify` を追加すると型が競合してビルドが壊れる。`node_modules/<pkg>/package.json` の `"types"` フィールドを先に確認する
+- **ローカルでビルドが完走しない場合はダミーの `.env.local` を用意する** — 環境変数不足でビルドが途中終了すると、SSR/バンドル起因の不具合をVercelビルドで初めて発見することになる。ダミー値の `.env.local`（gitignore済み）で `next build` を最後まで通して検証する
+
 #### 一般的な学び
 - **ユーザーは非エンジニア** — 手動操作を最小限にし、可能な限り自動化する
 - **ビルド確認は必ず行う** — コード変更後は `npx next build` でエラーチェック
