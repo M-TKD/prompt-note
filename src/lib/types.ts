@@ -2,11 +2,13 @@ export type DocumentType = "note" | "prompt" | "template";
 export type DocumentVisibility = "public" | "private";
 
 /**
- * プロンプトの難易度レベル。
- * basic    = 基本の型。毎日使う定番。
- * advanced = 実践テクニック。精度・再現性を上げるためのもの。
+ * プロンプトの難易度レベル。入門 → 初級 → 中級 → 上級 の4段階。
+ * starter      = 入門。AIをまだ使いこなせていない人が、今日いちばん最初にやること。
+ * basic        = 初級。毎日の仕事で使う定番の型。
+ * intermediate = 中級。職種ごとの実務テンプレート。変数を埋めて使い回す。
+ * advanced     = 上級。最新のプロンプト技法。精度・再現性を上げるためのもの。
  */
-export type PromptLevel = "basic" | "advanced";
+export type PromptLevel = "starter" | "basic" | "intermediate" | "advanced";
 
 export interface PromptDocument {
   id: string;

@@ -3,10 +3,12 @@ import { PromptDocument, PromptLevel } from "./types";
 /**
  * PromptNotes 公式プロンプトライブラリ
  *
- * 2階層に分けて管理する:
+ * 4段階に分けて管理する（入門 → 初級 → 中級 → 上級）:
  *
- *  - BASIC_PROMPTS    「基本」毎日使う定番。短く、そのまま使える。プロンプトの型を体で覚えるためのもの。
- *  - ADVANCED_PROMPTS 「実践」最新のプロンプト技法を使った、成果物の質を上げるためのもの。
+ *  - STARTER_PROMPTS      「入門」AIに何を頼めばいいかわからない人が、いちばん最初にやる5本。
+ *  - BASIC_PROMPTS        「初級」毎日の仕事で使う定番。短く、そのまま使える。
+ *  - INTERMEDIATE_PROMPTS 「中級」職種ごとの実務テンプレート。変数を埋めて成果物を作る。
+ *  - ADVANCED_PROMPTS     「上級」最新のプロンプト技法。精度と再現性を上げる。
  *
  * 個人設定（Settings → Personalize）で埋まる変数:
  *   {{私の名前}} {{私の職種}} {{私の業界}} {{私の専門分野}}
@@ -29,13 +31,156 @@ export type PromptRecipe = Omit<PromptDocument, "id" | "createdAt" | "updatedAt"
 const meta = { userId: "sample", visibility: "public" as const };
 
 // ============================================================
-// BASIC — 基本の型。まずはここから。
+// STARTER — 入門。今日いちばん最初にやる5本。
 // ============================================================
 
-export const BASIC_PROMPTS: PromptRecipe[] = [
+export const STARTER_PROMPTS: PromptRecipe[] = [
   {
     ...meta,
-    level: "basic",
+    level: "starter",
+    title: "はじめの1本：仕事をひとつ渡してみる",
+    summary: "AIに何を頼めばいいかわからない人の、いちばん最初の1本。",
+    tips: [
+      "完璧に書こうとしなくて大丈夫。まず投げて、返ってきたものを直していく方が速い",
+      "「私は〜です」と立場を1行足すだけで、返ってくる答えの精度が変わる",
+      "結果に納得できなくても失敗ではありません。次の「追い質問の型」に進んでください",
+    ],
+    bodyMd: `私は{{私の職種}}です。
+
+いま、こういう作業に時間を取られています。
+
+{{面倒だと感じている作業}}
+
+この作業について、次の3つを教えてください。
+
+1. AIに任せられる部分と、人がやるべき部分の切り分け
+2. 任せられる部分について、私がコピペして使える指示文（プロンプト）を1つ
+3. その指示文を使うときのコツを3つ
+
+専門用語は使わず、{{私のレベル}}に合わせて説明してください。`,
+    type: "template",
+    tags: ["入門", "テクニック"],
+    likeCount: 168,
+    saveCount: 102,
+    forkCount: 51,
+  },
+  {
+    ...meta,
+    level: "starter",
+    title: "追い質問の型：1回で終わらせない",
+    summary: "最初の答えがイマイチな時に、何と言えば良くなるか。",
+    technique: "反復改善（1往復で終わらせない）",
+    tips: [
+      "最初の回答は下書きだと思ってください。2〜3往復させるのが普通です",
+      "「もっと良くして」ではなく、どこが不満なのかを1点だけ伝えるのがコツ",
+      "良くなった時点の本文を PromptNotes に保存しておくと、次から使い回せます",
+    ],
+    bodyMd: `さっきの回答について、次の点を直してください。
+
+## 良かったところ（残してほしい）
+{{気に入った部分}}
+
+## 物足りないところ
+{{不満な点を1つだけ}}
+
+## 直し方の指定
+- {{短くする / 具体例を足す / 表にする / 専門用語を減らす}}
+
+## お願い
+- 全部書き直さず、上の点だけを直してください
+- 直した箇所と、その理由を最後に3行でまとめてください`,
+    type: "template",
+    tags: ["入門", "テクニック"],
+    likeCount: 151,
+    saveCount: 94,
+    forkCount: 43,
+  },
+  {
+    ...meta,
+    level: "starter",
+    title: "AIに任せられる仕事を洗い出す",
+    summary: "自分の業務を棚卸しして、どこから自動化するか決める。",
+    tips: [
+      "「AIで何ができるか」ではなく「自分の何を渡せるか」から考えると早いです",
+      "出てきた候補のうち、頻度が高いものから1つだけ着手してください",
+    ],
+    bodyMd: `# 私の仕事の棚卸しを手伝ってください
+
+## 私について
+- 職種: {{私の職種}}
+- 業界: {{私の業界}}
+
+## 1週間でやっている作業
+{{やっている作業を思いつくまま箇条書き}}
+
+## 出してほしいもの
+
+### 1. 仕分け表
+| 作業 | 頻度 | 1回あたりの時間 | AI適性 | 理由 |
+|------|------|---------------|--------|------|
+
+AI適性は ◎すぐ任せられる / ○下書きは任せられる / △人がやるべき の3段階で。
+
+### 2. 最初に着手すべき1つ
+「頻度 × 時間 × AI適性」で最も効果が大きいものを1つ選び、理由を書いてください。
+
+### 3. その作業用のプロンプト
+選んだ作業について、私がそのままコピペして使える指示文を作ってください。
+毎回変わる部分は {{変数名}} の形にしてください。
+
+## ルール
+- 一般論ではなく、私が挙げた作業だけを対象にすること
+- 「AIには難しい」ものは正直に △ と書くこと`,
+    type: "template",
+    tags: ["入門", "ビジネス"],
+    likeCount: 143,
+    saveCount: 89,
+    forkCount: 38,
+  },
+  {
+    ...meta,
+    level: "starter",
+    title: "AIの答えを疑う（事実確認の型）",
+    summary: "そのまま信じて出す前に、必ず通しておく1ステップ。",
+    technique: "根拠の切り分け",
+    tips: [
+      "AIは知らないことも自信たっぷりに書きます。数字・固有名詞・法律・日付は必ず疑ってください",
+      "「どこまでが確かか」を本人に仕分けさせると、確認すべき箇所だけが残ります",
+      "この型を最初に覚えておくと、後々の事故が防げます",
+    ],
+    bodyMd: `さきほどの回答について、内容を検証してください。
+
+## やってほしいこと
+
+### 1. 主張の仕分け
+回答に含まれる事実の主張を洗い出し、次の表にしてください。
+
+| # | 主張 | 根拠の種類 | 確度 |
+|---|------|-----------|------|
+
+根拠の種類は「私が渡した情報 / 一般的に知られている事実 / あなたの推測」の3つに分類。
+確度は 高 / 中 / 低。
+
+### 2. 要確認リスト
+「推測」または確度が「中・低」のものを抜き出し、
+私が何を確認すればいいかを具体的に書いてください。
+
+### 3. 訂正版
+確認できないことを断定していた箇所を、
+「〜の可能性があります」に弱めるか削除した版を出してください。
+
+## ルール
+- 自分の回答をかばわないこと。間違いは間違いと認めてください
+- 「たぶん合っている」は確度「低」に分類してください`,
+    type: "template",
+    tags: ["入門", "テクニック"],
+    likeCount: 159,
+    saveCount: 97,
+    forkCount: 46,
+  },
+  {
+    ...meta,
+    level: "starter",
     title: "万能プロンプトの型（5要素）",
     summary: "何を頼む時でも使える骨組み。迷ったらこれに流し込む。",
     technique: "役割 × 文脈 × タスク × 制約 × 出力形式",
@@ -74,6 +219,13 @@ export const BASIC_PROMPTS: PromptRecipe[] = [
     saveCount: 88,
     forkCount: 47,
   },
+];
+
+// ============================================================
+// BASIC — 初級。毎日の仕事で使う定番の型。
+// ============================================================
+
+export const BASIC_PROMPTS: PromptRecipe[] = [
   {
     ...meta,
     level: "basic",
@@ -571,7 +723,7 @@ export const BASIC_PROMPTS: PromptRecipe[] = [
 ];
 
 // ============================================================
-// ADVANCED — 実践テクニック。成果物の質を一段上げる。
+// ADVANCED — 上級。最新のプロンプト技法。
 // ============================================================
 
 const TECHNIQUE_PROMPTS: PromptRecipe[] = [
@@ -1098,10 +1250,14 @@ STEP 2 のプロンプトは、コードブロックに入れて丸ごとコピ�
   },
 ];
 
+// ============================================================
+// INTERMEDIATE — 中級。職種ごとの実務テンプレート。
+// ============================================================
+
 const WORK_PROMPTS: PromptRecipe[] = [
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "コードレビュー（6軸評価）",
     summary: "バグ・セキュリティ・性能・可読性・テスト容易性・慣習の6観点で見る。",
     tips: ["指摘だけでなく修正例まで出させると、そのまま適用できる"],
@@ -1139,7 +1295,7 @@ const WORK_PROMPTS: PromptRecipe[] = [
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "React コンポーネント設計",
     summary: "Props設計・実装・テストまでを一括で出させる。",
     bodyMd: `# Reactコンポーネントを設計・実装
@@ -1172,7 +1328,7 @@ const WORK_PROMPTS: PromptRecipe[] = [
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "SQL クエリ最適化アドバイザー",
     summary: "遅いクエリの原因と、インデックス設計まで出す。",
     bodyMd: `# SQLクエリを最適化
@@ -1205,7 +1361,7 @@ const WORK_PROMPTS: PromptRecipe[] = [
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "API設計レビュー",
     summary: "エンドポイント一覧をRESTful観点で点検する。",
     bodyMd: `以下のAPI設計をレビューしてください。
@@ -1238,7 +1394,7 @@ const WORK_PROMPTS: PromptRecipe[] = [
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "ブログ記事構成（SEO対応）",
     summary: "検索意図から逆算して、見出し構成とCTAまで設計する。",
     bodyMd: `# SEO対応ブログ記事の構成
@@ -1274,7 +1430,7 @@ SEOとコンテンツマーケティングの専門家
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "LP コピーライティング",
     summary: "ヒーローからFAQまで、セクション別にコピーを作る。",
     bodyMd: `# ランディングページのコピーを作成
@@ -1325,7 +1481,7 @@ SEOとコンテンツマーケティングの専門家
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "YouTube台本（10分動画）",
     summary: "冒頭15秒のフックから CTA まで、時間配分付きで書く。",
     bodyMd: `# YouTube動画の台本を作成
@@ -1370,7 +1526,7 @@ SEOとコンテンツマーケティングの専門家
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "プレゼン資料のストーリー構成",
     summary: "スライド単位で、伝えたいこと・ビジュアル・話す内容を設計する。",
     bodyMd: `# プレゼン資料の構成を作成
@@ -1414,7 +1570,7 @@ SEOとコンテンツマーケティングの専門家
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "ユーザーインタビュー質問設計",
     summary: "誘導せずに本音を引き出す質問リストを作る。",
     bodyMd: `# ユーザーインタビューの質問設計
@@ -1448,7 +1604,7 @@ SEOとコンテンツマーケティングの専門家
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "競合分析レポート",
     summary: "比較表と、自社が狙うべき空白を出す。",
     bodyMd: `# 競合分析
@@ -1488,7 +1644,7 @@ SEOとコンテンツマーケティングの専門家
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "データ分析レポート作成",
     summary: "結論ファーストで、可視化の提案とアクションまで書く。",
     bodyMd: `# データ分析レポート
@@ -1539,7 +1695,7 @@ SEOとコンテンツマーケティングの専門家
 const FREELANCE_PROMPTS: PromptRecipe[] = [
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "クライアントへの提案メール（DESC+B法）",
     summary: "売り込み感を出さずに、受注につながる提案メールを書く。",
     technique: "DESC+B法",
@@ -1594,7 +1750,7 @@ DESC+B法に基づき、以下の構成で提案メールを作成してくだ�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "フォローアップメール（GRP法）",
     summary: "納品後に送って、リピート受注につなげる。",
     technique: "GRP法（感謝 → 成果 → 提案）",
@@ -1645,7 +1801,7 @@ DESC+B法に基づき、以下の構成で提案メールを作成してくだ�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "提案書・企画書のドラフト（PREP+A法）",
     summary: "意思決定者が3行で判断できる提案書を作る。",
     technique: "PREP+A法",
@@ -1710,7 +1866,7 @@ DESC+B法に基づき、以下の構成で提案メールを作成してくだ�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "議事録の構造化（DUA分離法）",
     summary: "走り書きから、決定・未解決・アクションを厳密に分ける。",
     technique: "DUA分離法（Decision / Unsolved / Action）",
@@ -1771,7 +1927,7 @@ DESC+B法に基づき、以下の構成で提案メールを作成してくだ�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "見積書の叩き台（Market + Buffer法）",
     summary: "相場と工数から、根拠つきの見積を組む。",
     technique: "Market + Buffer法",
@@ -1834,7 +1990,7 @@ DESC+B法に基づき、以下の構成で提案メールを作成してくだ�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "経費の仕分けルール表を作る",
     summary: "勘定科目・按分・注意点を1枚の表に整理する。",
     technique: "カテゴリ × 判断基準マトリクス法",
@@ -1889,7 +2045,7 @@ DESC+B法に基づき、以下の構成で提案メールを作成してくだ�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "SNS投稿文の作成（AIDA+S法）",
     summary: "いいねではなく「保存」される投稿を3パターン作る。",
     technique: "AIDA+S法",
@@ -1947,7 +2103,7 @@ DESC+B法に基づき、以下の構成で提案メールを作成してくだ�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "自己紹介・ポートフォリオ要約（FAB法）",
     summary: "SNS用・提案書用・About用の3サイズを一度に作る。",
     technique: "FAB法（Feature → Advantage → Benefit）",
@@ -1999,7 +2155,7 @@ FAB法（Feature → Advantage → Benefit）に基づき、以下の3パター�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "単価交渉シミュレーション（BATNA + ZOPA分析）",
     summary: "値上げ交渉を、感情ではなく数字と代替案で設計する。",
     technique: "原則立脚型交渉（BATNA / ZOPA）",
@@ -2064,7 +2220,7 @@ FAB法（Feature → Advantage → Benefit）に基づき、以下の3パター�
   },
   {
     ...meta,
-    level: "advanced",
+    level: "intermediate",
     title: "週間タスク優先度整理（アイゼンハワー・マトリクス）",
     summary: "やらないことを決めて、90分ブロックで週を設計する。",
     technique: "アイゼンハワー・マトリクス + タイムブロッキング",
@@ -2127,29 +2283,56 @@ FAB法（Feature → Advantage → Benefit）に基づき、以下の3パター�
   },
 ];
 
-export const ADVANCED_PROMPTS: PromptRecipe[] = [
-  ...TECHNIQUE_PROMPTS,
-  ...WORK_PROMPTS,
-  ...FREELANCE_PROMPTS,
-];
+export const INTERMEDIATE_PROMPTS: PromptRecipe[] = [...WORK_PROMPTS, ...FREELANCE_PROMPTS];
 
-export const PROMPT_LIBRARY: PromptRecipe[] = [...BASIC_PROMPTS, ...ADVANCED_PROMPTS];
+export const ADVANCED_PROMPTS: PromptRecipe[] = [...TECHNIQUE_PROMPTS];
+
+export const PROMPT_LIBRARY: PromptRecipe[] = [
+  ...STARTER_PROMPTS,
+  ...BASIC_PROMPTS,
+  ...INTERMEDIATE_PROMPTS,
+  ...ADVANCED_PROMPTS,
+];
 
 /** 旧名。Explore / seed で使用 */
 export const SAMPLE_PROMPTS: PromptRecipe[] = PROMPT_LIBRARY;
 
-export const LEVEL_CONFIG: Record<PromptLevel, { label: string; short: string; description: string }> = {
+/** 入門 → 初級 → 中級 → 上級 の順。UIの並び順もこれに従う */
+export const LEVEL_ORDER: PromptLevel[] = ["starter", "basic", "intermediate", "advanced"];
+
+export const LEVEL_CONFIG: Record<
+  PromptLevel,
+  { label: string; short: string; description: string; forWhom: string }
+> = {
+  starter: {
+    label: "入門",
+    short: "Starter",
+    description: "AIに何を頼めばいいかわからない人が、今日いちばん最初にやる5本。",
+    forWhom: "まだAIを仕事に使えていない",
+  },
   basic: {
-    label: "基本",
+    label: "初級",
     short: "Basic",
-    description: "毎日使う定番。そのままコピーして使える、プロンプトの型。",
+    description: "毎日の仕事で使う定番。そのままコピーして使える、プロンプトの型。",
+    forWhom: "たまに使うが、毎回書き方に迷う",
+  },
+  intermediate: {
+    label: "中級",
+    short: "Intermediate",
+    description: "職種ごとの実務テンプレート。変数を埋めて、成果物をそのまま作る。",
+    forWhom: "日常的に使っていて、仕事の成果物を作りたい",
   },
   advanced: {
-    label: "実践",
+    label: "上級",
     short: "Advanced",
     description: "最新のプロンプト技法。精度・再現性を一段上げたい時に。",
+    forWhom: "精度を上げたい・仕組みとして回したい",
   },
 };
+
+export function getPromptsByLevel(level: PromptLevel): PromptRecipe[] {
+  return PROMPT_LIBRARY.filter((p) => p.level === level);
+}
 
 // ============================================================
 // TIPS — プロンプトの効かせ方
@@ -2231,6 +2414,16 @@ export const PROMPT_TIPS: PromptTip[] = [
     category: "app",
     title: "変数は必ず {{二重波括弧}}",
     body: "{一重} では変数として認識されません。{{ }} で囲んだ箇所だけが Variables シートで一括入力できます。ツールバーの「{{」ボタンで挿入できます。",
+  },
+  {
+    category: "app",
+    title: "順番に迷ったら「はじめかた」を見る",
+    body: "入門 → 初級 → 中級 → 上級 の順に、今日やること・今週やること・今月やることが並んでいます。どれから手をつけるか決められない時はここから。",
+  },
+  {
+    category: "app",
+    title: "MCPを繋ぐとコピペが要らなくなる",
+    body: "SlackやGitHub、Google ドライブなどにAIを直接繋ぐ仕組みです。繋いでおくと「あのスレッドを要約して」と頼むだけで済みます。はじめかたガイドに一覧があります。",
   },
   {
     category: "app",

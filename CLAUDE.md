@@ -45,8 +45,9 @@
 - Design: モノクロ + アクセント #4F46E5 (indigo)
 
 ### 主要ファイル
-- `src/lib/prompt-library.ts` — 公式プロンプトライブラリ。`BASIC_PROMPTS`（基本16本）/ `ADVANCED_PROMPTS`（実践32本）/ `PROMPT_TIPS`（Tips 16件）
+- `src/lib/prompt-library.ts` — 公式プロンプトライブラリ。入門5 / 初級15 / 中級21 / 上級11 の4段階（`STARTER_PROMPTS` / `BASIC_PROMPTS` / `INTERMEDIATE_PROMPTS` / `ADVANCED_PROMPTS`）と `PROMPT_TIPS`
+- `src/lib/learn.ts` — はじめかたガイドの中身。`LEARNING_PATH`（ロードマップ）/ `AI_USE_CASES`（できること集）/ `MCP_SERVERS`（MCP集）。プロンプトの参照は title 完全一致で `/feed?q=` に渡す
 - `src/lib/personalization.ts` — 個人設定。職種・文体などを localStorage に保存し、`{{私の職種}}` 等の自動補完と「私について」ブロックの生成を行う
 - `src/lib/types.ts` — 型定義と `extractVariables` / `fillTemplate`
 
-### 現在のバージョン: v0.6.0
+### 現在のバージョン: v0.7.0

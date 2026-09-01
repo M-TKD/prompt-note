@@ -545,7 +545,7 @@ export default function SettingsPage() {
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           <div className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333] text-sm">
             <span className="text-[#1a1a1a] dark:text-white">Version</span>
-            <span className="text-[#9ca3af] font-mono text-xs">0.6.0</span>
+            <span className="text-[#9ca3af] font-mono text-xs">0.7.0</span>
           </div>
         </div>
       </section>

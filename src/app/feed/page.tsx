@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
 import { PromptDocument, CATEGORIES, TYPE_CONFIG, PromptLevel } from "@/lib/types";
-import { SAMPLE_PROMPTS, LEVEL_CONFIG } from "@/lib/prompt-library";
-import { Heart, GitFork, Copy, Check, ExternalLink, Search, X, TrendingUp, Sparkles, Download, Lightbulb } from "lucide-react";
+import { SAMPLE_PROMPTS, LEVEL_CONFIG, LEVEL_ORDER } from "@/lib/prompt-library";
+import Link from "next/link";
+import { Heart, GitFork, Copy, Check, ExternalLink, Search, X, TrendingUp, Sparkles, Download, Lightbulb, GraduationCap, ChevronRight } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { ShareSheet } from "@/components/ShareSheet";
 import { useToast } from "@/components/Toast";
@@ -24,10 +25,10 @@ function FeedContent() {
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [shareDoc, setShareDoc] = useState<PromptDocument | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const initialLevel = searchParams.get("level");
   const [level, setLevel] = useState<PromptLevel | "all">(
-    initialLevel === "basic" || initialLevel === "advanced" ? initialLevel : "all"
+    LEVEL_ORDER.includes(initialLevel as PromptLevel) ? (initialLevel as PromptLevel) : "all"
   );
 
   // Top 5 most popular for the featured banner
@@ -229,27 +230,41 @@ function FeedContent() {
         </div>
       )}
 
-      {/* Level: Basic / Advanced */}
+      {/* はじめかたへの導線 */}
+      {!searchQuery && (
+        <Link
+          href="/learn"
+          className="flex items-center gap-2.5 p-3 mb-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] no-underline hover:border-[#4F46E5]/30"
+        >
+          <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center shrink-0">
+            <GraduationCap className="w-4 h-4 text-[#4F46E5]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-[#1a1a1a] dark:text-white">はじめかたガイド</p>
+            <p className="text-[10px] text-[#9ca3af]">最初にやる5本 / できること集 / MCP集</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#d1d5db] shrink-0" />
+        </Link>
+      )}
+
+      {/* Level: 入門 / 初級 / 中級 / 上級 */}
       <div className="mb-4">
-        <div className="flex gap-2">
-          {([
-            { key: "all" as const, label: "すべて", desc: "" },
-            { key: "basic" as const, label: LEVEL_CONFIG.basic.label, desc: LEVEL_CONFIG.basic.description },
-            { key: "advanced" as const, label: LEVEL_CONFIG.advanced.label, desc: LEVEL_CONFIG.advanced.description },
-          ]).map((l) => {
-            const count = l.key === "all" ? docs.length : docs.filter(d => d.level === l.key).length;
+        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {(["all" as const, ...LEVEL_ORDER]).map((key) => {
+            const count = key === "all" ? docs.length : docs.filter(d => d.level === key).length;
+            const label = key === "all" ? "すべて" : LEVEL_CONFIG[key].label;
             return (
               <button
-                key={l.key}
-                onClick={() => setLevel(l.key)}
-                className={`flex-1 px-3 py-2 rounded-xl text-[11px] font-medium border ${
-                  level === l.key
+                key={key}
+                onClick={() => setLevel(key)}
+                className={`flex-1 min-w-[64px] px-2.5 py-2 rounded-xl text-[11px] font-medium border whitespace-nowrap ${
+                  level === key
                     ? "border-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/15 text-[#4F46E5]"
                     : "border-[#f0f0f0] dark:border-[#333] text-[#6b7280] dark:text-[#9ca3af]"
                 }`}
               >
-                {l.label}
-                <span className="ml-1.5 font-mono text-[9px] opacity-60">{count}</span>
+                {label}
+                <span className="ml-1 font-mono text-[9px] opacity-60">{count}</span>
               </button>
             );
           })}

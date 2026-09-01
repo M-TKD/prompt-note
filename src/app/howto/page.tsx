@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, ArrowUpCircle, WandSparkles, Send, Globe, GitFork, Upload, Pin, Key, Variable, Download, Share2, Moon, Sparkles, ChevronRight } from "lucide-react";
-import { LEVEL_CONFIG, PROMPT_TIPS, TipCategory, BASIC_PROMPTS, ADVANCED_PROMPTS } from "@/lib/prompt-library";
+import { ArrowLeft, Plus, ArrowUpCircle, WandSparkles, Send, Globe, GitFork, Upload, Pin, Key, Variable, Download, Share2, Moon, Sparkles, ChevronRight, GraduationCap } from "lucide-react";
+import { LEVEL_CONFIG, LEVEL_ORDER, PROMPT_TIPS, TipCategory, getPromptsByLevel } from "@/lib/prompt-library";
 
 const STEPS = [
   {
@@ -80,6 +80,13 @@ const FEATURES = [
   { icon: <Moon className="w-3.5 h-3.5" />, title: "Dark Mode", desc: "Settings から切り替え" },
   { icon: <GitFork className="w-3.5 h-3.5" />, title: "Fork", desc: "他人のPromptを自分用にコピー" },
 ];
+
+const LEVEL_BADGE: Record<string, string> = {
+  starter: "bg-[#ECFDF5] dark:bg-[#065f46]/25 text-[#059669]",
+  basic: "bg-[#f5f5f5] dark:bg-[#333] text-[#6b7280] dark:text-[#9ca3af]",
+  intermediate: "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]",
+  advanced: "bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a]",
+};
 
 const TIP_TABS: { key: TipCategory; label: string }[] = [
   { key: "basic", label: "基本" },
@@ -182,25 +189,38 @@ export default function HowToPage() {
       {/* Prompt library levels */}
       <section className="mb-12">
         <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">Prompt library</p>
+
+        <Link
+          href="/learn"
+          className="flex items-center gap-3 p-4 mb-2 rounded-xl bg-[#EEF2FF]/40 dark:bg-[#4F46E5]/10 border border-[#4F46E5]/20 no-underline"
+        >
+          <div className="w-9 h-9 rounded-lg bg-white dark:bg-[#1a1a1a] flex items-center justify-center shrink-0">
+            <GraduationCap className="w-4 h-4 text-[#4F46E5]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm text-[#1a1a1a] dark:text-white">はじめかたガイド</p>
+            <p className="text-xs text-[#9ca3af] mt-0.5 leading-relaxed">
+              今日やること → 今週 → 今月 の順番。できること集とMCP集も。
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#4F46E5] shrink-0" />
+        </Link>
+
         <div className="space-y-2">
-          {(["basic", "advanced"] as const).map((lv) => (
+          {LEVEL_ORDER.map((lv) => (
             <Link
               key={lv}
               href={`/feed?level=${lv}`}
               className="flex items-start gap-3 p-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] no-underline hover:border-[#4F46E5]/30"
             >
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 mt-0.5 ${
-                lv === "basic"
-                  ? "bg-[#f5f5f5] dark:bg-[#333] text-[#6b7280] dark:text-[#9ca3af]"
-                  : "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]"
-              }`}>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 mt-0.5 ${LEVEL_BADGE[lv]}`}>
                 {LEVEL_CONFIG[lv].label}
               </span>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm text-[#1a1a1a] dark:text-white">
                   {LEVEL_CONFIG[lv].short}
                   <span className="text-[10px] text-[#d1d5db] font-mono ml-2">
-                    {lv === "basic" ? BASIC_PROMPTS.length : ADVANCED_PROMPTS.length} 本
+                    {getPromptsByLevel(lv).length} 本
                   </span>
                 </p>
                 <p className="text-xs text-[#9ca3af] mt-0.5 leading-relaxed">{LEVEL_CONFIG[lv].description}</p>
