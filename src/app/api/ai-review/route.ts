@@ -37,7 +37,26 @@ const SYSTEM_PROMPT = `あなたはプロンプトエンジニアリングの専
   "suggestionMd": "改善版のプロンプト全文（Markdown形式）"
 }
 
-feedbackは各20文字以内で簡潔に。suggestionMdは元のプロンプトを改善した完全版を出力してください。`;
+feedbackは各20文字以内で簡潔に。suggestionMdは元のプロンプトを改善した完全版を出力してください。
+
+## 改善版を書くときの方針
+- 「役割 / 文脈 / タスク / 制約 / 出力形式」の5要素が揃うようにする
+- 「いい感じに」「適切に」などの曖昧な語は、数値・形式・トーンの具体指定に置き換える
+- 毎回変わる箇所は {{変数名}} の形で変数化する（二重波括弧。一重は使わない）
+- 事実を扱うプロンプトには「判断できない場合は推測せず『情報不足』と答える」旨の一文を入れる`;
+
+/** 個人設定（職種・レベル・トーンなど）があれば、講評をその人向けに寄せる */
+function buildSystemPrompt(reviewerHint?: string): string {
+  if (!reviewerHint || typeof reviewerHint !== "string") return SYSTEM_PROMPT;
+  const hint = reviewerHint.slice(0, 600);
+  return `${SYSTEM_PROMPT}
+
+## このプロンプトを書いた人について
+${hint}
+
+改善版と feedback は、この人の職種・理解レベル・好みのトーンに合わせて調整してください。
+ただし評価基準（A〜D）は甘くしないでください。`;
+}
 
 // -----------------------------------------------
 // Get monthly usage count for a user
@@ -87,7 +106,8 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { bodyMd, provider, apiKey, accessToken } = await req.json();
+    const { bodyMd, provider, apiKey, accessToken, reviewerHint } = await req.json();
+    const systemPrompt = buildSystemPrompt(reviewerHint);
 
     if (!bodyMd || bodyMd.trim().length === 0) {
       return NextResponse.json({ error: "空のプロンプトです" }, { status: 400 });
@@ -96,9 +116,9 @@ export async function POST(req: NextRequest) {
     // 1. If user provided their own API key → no limits
     if (apiKey && provider) {
       if (provider === "openai") {
-        return await callOpenAI(apiKey, bodyMd);
+        return await callOpenAI(apiKey, bodyMd, systemPrompt);
       } else if (provider === "anthropic") {
-        return await callAnthropic(apiKey, bodyMd);
+        return await callAnthropic(apiKey, bodyMd, systemPrompt);
       }
     }
 
@@ -125,7 +145,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Call Groq and record usage
-        const result = await callGroq(groqKey, bodyMd);
+        const result = await callGroq(groqKey, bodyMd, systemPrompt);
         if (result.status === 200) {
           await recordUsage(userId);
           // Add usage info to response
@@ -145,7 +165,7 @@ export async function POST(req: NextRequest) {
     // 3. Fallback: server-side Anthropic key
     const serverKey = process.env.ANTHROPIC_API_KEY;
     if (serverKey) {
-      return await callAnthropic(serverKey, bodyMd);
+      return await callAnthropic(serverKey, bodyMd, systemPrompt);
     }
 
     // No key at all → demo response
@@ -159,7 +179,7 @@ export async function POST(req: NextRequest) {
 // -----------------------------------------------
 // Groq (Llama 3.3 70B - free tier)
 // -----------------------------------------------
-async function callGroq(apiKey: string, bodyMd: string) {
+async function callGroq(apiKey: string, bodyMd: string, systemPrompt: string = SYSTEM_PROMPT) {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -169,7 +189,7 @@ async function callGroq(apiKey: string, bodyMd: string) {
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: `以下のプロンプトを評価・改善してください:\n\n${bodyMd}` },
       ],
       max_tokens: 2048,
@@ -202,7 +222,7 @@ async function callGroq(apiKey: string, bodyMd: string) {
 // -----------------------------------------------
 // OpenAI (user's own key)
 // -----------------------------------------------
-async function callOpenAI(apiKey: string, bodyMd: string) {
+async function callOpenAI(apiKey: string, bodyMd: string, systemPrompt: string = SYSTEM_PROMPT) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -212,7 +232,7 @@ async function callOpenAI(apiKey: string, bodyMd: string) {
     body: JSON.stringify({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: `以下のプロンプトを評価・改善してください:\n\n${bodyMd}` },
       ],
       max_tokens: 2048,
@@ -237,7 +257,7 @@ async function callOpenAI(apiKey: string, bodyMd: string) {
 // -----------------------------------------------
 // Anthropic (user's own key or server key)
 // -----------------------------------------------
-async function callAnthropic(apiKey: string, bodyMd: string) {
+async function callAnthropic(apiKey: string, bodyMd: string, systemPrompt: string = SYSTEM_PROMPT) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -248,7 +268,7 @@ async function callAnthropic(apiKey: string, bodyMd: string) {
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 2048,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [
         { role: "user", content: `以下のプロンプトを評価・改善してください:\n\n${bodyMd}` },
       ],

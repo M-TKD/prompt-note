@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, ArrowUpCircle, WandSparkles, Send, Globe, GitFork, Search, Upload, Pin, Key, Variable, Download, Share2, Moon } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Plus, ArrowUpCircle, WandSparkles, Send, Globe, GitFork, Upload, Pin, Key, Variable, Download, Share2, Moon, Sparkles, ChevronRight } from "lucide-react";
+import { LEVEL_CONFIG, PROMPT_TIPS, TipCategory, BASIC_PROMPTS, ADVANCED_PROMPTS } from "@/lib/prompt-library";
 
 const STEPS = [
   {
@@ -20,20 +23,27 @@ const STEPS = [
   },
   {
     number: "03",
-    title: "AIで添削",
-    description: "AI Review で5軸評価（明確性・具体性・構造・文脈・制約）。改善版も自動生成。Settings で自分の OpenAI / Anthropic APIキーを設定して使えます。",
-    icon: <WandSparkles className="w-4 h-4" />,
+    title: "個人設定を1度だけ書く",
+    description: "Settings → Personalize に職種・専門分野・文体・出力言語を入れておくと、テンプレートの {{私の職種}} などが自動で埋まり、AIに送る時は「私について」ブロックを先頭に付けられます。毎回同じ前提を打ち直す必要がなくなります。",
+    icon: <Sparkles className="w-4 h-4" />,
     accent: false,
   },
   {
     number: "04",
-    title: "AIアプリに送る",
-    description: "磨いたPromptを ChatGPT / Claude / Gemini / Copilot / Perplexity / Grok にワンタップで送信。クリップボードにコピー→アプリ起動を自動化。",
-    icon: <Send className="w-4 h-4" />,
+    title: "AIで添削",
+    description: "AI Review で5軸評価（明確性・具体性・構造・文脈・制約）。改善版も自動生成。個人設定を入れていれば、あなたの職種・理解レベルに合わせた講評になります。",
+    icon: <WandSparkles className="w-4 h-4" />,
     accent: true,
   },
   {
     number: "05",
+    title: "AIアプリに送る",
+    description: "磨いたPromptを ChatGPT / Claude / Gemini / Copilot / Perplexity / Grok にワンタップで送信。クリップボードにコピー→アプリ起動を自動化。よく使うAIは個人設定で先頭に固定できます。",
+    icon: <Send className="w-4 h-4" />,
+    accent: false,
+  },
+  {
+    number: "06",
     title: "公開して共有",
     description: "良いPromptは公開設定で共有。Explore でみんなのPromptを見つけて、フォークして自分用にカスタマイズ。",
     icon: <Globe className="w-4 h-4" />,
@@ -60,6 +70,7 @@ const CONCEPTS = [
 ];
 
 const FEATURES = [
+  { icon: <Sparkles className="w-3.5 h-3.5" />, title: "Personalize", desc: "職種・文体を1度書けば毎回反映" },
   { icon: <Upload className="w-3.5 h-3.5" />, title: "Import", desc: ".md / .txt ファイルを読み込み" },
   { icon: <Download className="w-3.5 h-3.5" />, title: "Export", desc: "Markdownファイルとしてダウンロード" },
   { icon: <Share2 className="w-3.5 h-3.5" />, title: "Share", desc: "ネイティブ共有（モバイル対応）" },
@@ -70,8 +81,15 @@ const FEATURES = [
   { icon: <GitFork className="w-3.5 h-3.5" />, title: "Fork", desc: "他人のPromptを自分用にコピー" },
 ];
 
+const TIP_TABS: { key: TipCategory; label: string }[] = [
+  { key: "basic", label: "基本" },
+  { key: "advanced", label: "実践" },
+  { key: "app", label: "アプリの使い方" },
+];
+
 export default function HowToPage() {
   const router = useRouter();
+  const [tipTab, setTipTab] = useState<TipCategory>("basic");
 
   return (
     <div className="px-6 pt-14 pb-8">
@@ -161,40 +179,63 @@ export default function HowToPage() {
         </div>
       </section>
 
+      {/* Prompt library levels */}
+      <section className="mb-12">
+        <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">Prompt library</p>
+        <div className="space-y-2">
+          {(["basic", "advanced"] as const).map((lv) => (
+            <Link
+              key={lv}
+              href={`/feed?level=${lv}`}
+              className="flex items-start gap-3 p-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] no-underline hover:border-[#4F46E5]/30"
+            >
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 mt-0.5 ${
+                lv === "basic"
+                  ? "bg-[#f5f5f5] dark:bg-[#333] text-[#6b7280] dark:text-[#9ca3af]"
+                  : "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]"
+              }`}>
+                {LEVEL_CONFIG[lv].label}
+              </span>
+              <div className="flex-1">
+                <p className="font-medium text-sm text-[#1a1a1a] dark:text-white">
+                  {LEVEL_CONFIG[lv].short}
+                  <span className="text-[10px] text-[#d1d5db] font-mono ml-2">
+                    {lv === "basic" ? BASIC_PROMPTS.length : ADVANCED_PROMPTS.length} 本
+                  </span>
+                </p>
+                <p className="text-xs text-[#9ca3af] mt-0.5 leading-relaxed">{LEVEL_CONFIG[lv].description}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#d1d5db] shrink-0 mt-0.5" />
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* Tips */}
       <section className="mb-8">
         <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">Tips</p>
+        <div className="flex gap-1.5 mb-4">
+          {TIP_TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTipTab(t.key)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-medium ${
+                tipTab === t.key
+                  ? "bg-[#1a1a1a] text-white dark:bg-white dark:text-[#1a1a1a]"
+                  : "bg-[#f5f5f5] dark:bg-[#222] text-[#6b7280] dark:text-[#9ca3af]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
         <div className="space-y-3">
-          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
-            <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a] dark:text-white">メモ帳としても使えます</span>
-              — すべてをPromptにする必要はありません。普段のメモ帳として使って、良いアイデアだけBoostしましょう。
-            </p>
-          </div>
-          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
-            <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a] dark:text-white">記号バーで素早く入力</span>
-              {"— キーボードの上に # * _ ` < > などの記号バーがあります。Markdownの記号を1タップで入力できます。"}
-            </p>
-          </div>
-          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
-            <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a] dark:text-white">{"テンプレート変数 {{変数}}"}</span>
-              {"— テンプレートに {{名前}} のような変数を入れると、使う時に一括で埋められます。"}
-            </p>
-          </div>
-          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
-            <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a] dark:text-white">スワイプで操作</span>
-              — リスト上で左にスワイプすると、ピン留め・コピー・削除のアクションが出ます。
-            </p>
-          </div>
-          <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
-            <p className="text-xs text-[#6b7280] leading-relaxed">
-              <span className="font-medium text-[#1a1a1a] dark:text-white">AI Review を使うには</span>
-              — Settings → AI Review で OpenAI または Anthropic の APIキーを入力してください。キーはブラウザにのみ保存されます。
-            </p>
-          </div>
+          {PROMPT_TIPS.filter((t) => t.category === tipTab).map((tip) => (
+            <div key={tip.title} className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
+              <p className="font-medium text-xs text-[#1a1a1a] dark:text-white mb-1">{tip.title}</p>
+              <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] leading-relaxed">{tip.body}</p>
+            </div>
+          ))}
         </div>
       </section>
 
