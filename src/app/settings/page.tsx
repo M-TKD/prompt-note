@@ -4,7 +4,25 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useStore } from "@/lib/use-store";
-import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, FileText, Shield, Cloud, HardDrive, AlertTriangle, Upload, Download } from "lucide-react";
+import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, FileText, Shield, Cloud, HardDrive, AlertTriangle, Upload, Download, Sparkles, ChevronDown } from "lucide-react";
+import { AI_APPS } from "@/lib/types";
+import {
+  UserPreferences,
+  DEFAULT_PREFERENCES,
+  readStoredPreferences,
+  savePreferences,
+  clearPreferences,
+  hasPreferences,
+  buildPersonalContext,
+  TONE_LABELS,
+  EXPERTISE_LABELS,
+  LENGTH_LABELS,
+  LANGUAGE_LABELS,
+  ToneKey,
+  ExpertiseKey,
+  LengthKey,
+  LanguageKey,
+} from "@/lib/personalization";
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -21,8 +39,22 @@ export default function SettingsPage() {
   const [keySaved, setKeySaved] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [prefsSaved, setPrefsSaved] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const updatePref = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
+    setPrefs((prev) => ({ ...prev, [key]: value }));
+    setPrefsSaved(false);
+  };
 
   useEffect(() => {
+    // 保存済みの個人設定があれば読み込む（無ければ state はデフォルトのまま）
+    const storedPrefs = readStoredPreferences();
+    if (storedPrefs) {
+      setPrefs(storedPrefs);
+    }
     const saved = localStorage.getItem("promptnote_darkmode");
     if (saved === "1") {
       setDarkMode(true);
@@ -199,6 +231,175 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* Personalize */}
+      <section className="mb-8">
+        <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">Personalize</h2>
+        <div className="border-t border-[#f0f0f0] dark:border-[#333]">
+          <button
+            onClick={() => setPrefsOpen(!prefsOpen)}
+            className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]"
+          >
+            <div className="flex items-center gap-2.5 text-left">
+              <Sparkles className={`w-4 h-4 ${hasPreferences(prefs) ? "text-[#4F46E5]" : "text-[#9ca3af]"}`} />
+              <div>
+                <span className="text-sm text-[#1a1a1a] dark:text-white">個人設定（あなたの前提）</span>
+                <p className="text-[10px] text-[#9ca3af] mt-0.5">
+                  {hasPreferences(prefs) ? "テンプレートの変数に自動で反映されます" : "未設定 — 1度書けば毎回使えます"}
+                </p>
+              </div>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-[#d1d5db] shrink-0 ${prefsOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {prefsOpen && (
+            <div className="py-4 space-y-4 border-b border-[#f0f0f0] dark:border-[#333]">
+              <p className="text-[10px] text-[#9ca3af] leading-relaxed">
+                {"ここに書いた内容は、テンプレートの {{私の職種}} {{私の専門分野}} {{文体}} などに自動で入ります。Send to AI では「私について」ブロックとして本文の先頭に付けられます。保存先はこのブラウザのみです。"}
+              </p>
+
+              {/* Text fields */}
+              {([
+                { key: "displayName" as const, label: "名前 / 表示名", placeholder: "例: 田中太郎", token: "{{私の名前}}" },
+                { key: "role" as const, label: "職種", placeholder: "例: フリーランスWebデザイナー", token: "{{私の職種}}" },
+                { key: "industry" as const, label: "業界 / 事業ドメイン", placeholder: "例: 中小企業向けBtoB SaaS", token: "{{私の業界}}" },
+                { key: "expertiseArea" as const, label: "得意分野", placeholder: "例: LP制作、UI/UX、GA4分析", token: "{{私の専門分野}}" },
+              ]).map((f) => (
+                <div key={f.key}>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <label className="text-[11px] text-[#6b7280] dark:text-[#9ca3af]">{f.label}</label>
+                    <span className="text-[9px] text-[#d1d5db] font-mono">{f.token}</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={prefs[f.key]}
+                    onChange={(e) => updatePref(f.key, e.target.value)}
+                    placeholder={f.placeholder}
+                    className="w-full px-3 py-2 border border-[#f0f0f0] dark:border-[#333] rounded-lg text-xs outline-none focus:border-[#4F46E5] dark:bg-[#222] dark:text-white placeholder:text-[#d1d5db] dark:placeholder:text-[#444]"
+                  />
+                </div>
+              ))}
+
+              {/* Selects */}
+              {([
+                { key: "expertise" as const, label: "説明のレベル", token: "{{私のレベル}}", options: EXPERTISE_LABELS },
+                { key: "tone" as const, label: "トーン / 文体", token: "{{文体}}", options: TONE_LABELS },
+                { key: "length" as const, label: "分量の好み", token: "{{出力の長さ}}", options: LENGTH_LABELS },
+                { key: "language" as const, label: "出力言語", token: "{{出力言語}}", options: LANGUAGE_LABELS },
+              ]).map((f) => (
+                <div key={f.key}>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <label className="text-[11px] text-[#6b7280] dark:text-[#9ca3af]">{f.label}</label>
+                    <span className="text-[9px] text-[#d1d5db] font-mono">{f.token}</span>
+                  </div>
+                  <select
+                    value={prefs[f.key]}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (f.key === "expertise") updatePref("expertise", v as ExpertiseKey);
+                      else if (f.key === "tone") updatePref("tone", v as ToneKey);
+                      else if (f.key === "length") updatePref("length", v as LengthKey);
+                      else updatePref("language", v as LanguageKey);
+                    }}
+                    className="w-full px-3 py-2 border border-[#f0f0f0] dark:border-[#333] rounded-lg text-xs outline-none focus:border-[#4F46E5] dark:bg-[#222] dark:text-white"
+                  >
+                    {Object.entries(f.options).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+
+              {/* Favorite AI */}
+              <div>
+                <label className="text-[11px] text-[#6b7280] dark:text-[#9ca3af] mb-1.5 block">よく使うAI（Send to AI で先頭に出ます）</label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {AI_APPS.map((app) => (
+                    <button
+                      key={app.id}
+                      onClick={() => updatePref("favoriteAI", prefs.favoriteAI === app.id ? "" : app.id)}
+                      className={`text-[10px] px-2.5 py-1 rounded-full border ${
+                        prefs.favoriteAI === app.id
+                          ? "border-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/15 text-[#4F46E5]"
+                          : "border-[#f0f0f0] dark:border-[#333] text-[#9ca3af]"
+                      }`}
+                    >
+                      {app.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom instructions */}
+              <div>
+                <label className="text-[11px] text-[#6b7280] dark:text-[#9ca3af] mb-1 block">追加の指示（任意）</label>
+                <textarea
+                  value={prefs.customInstructions}
+                  onChange={(e) => updatePref("customInstructions", e.target.value)}
+                  rows={4}
+                  placeholder={"例:\n・社名は必ず「株式会社◯◯」と正式名称で書く\n・「弊社」ではなく「当方」を使う\n・絵文字は使わない"}
+                  className="w-full px-3 py-2 border border-[#f0f0f0] dark:border-[#333] rounded-lg text-xs outline-none focus:border-[#4F46E5] dark:bg-[#222] dark:text-white placeholder:text-[#d1d5db] dark:placeholder:text-[#444] leading-relaxed resize-none"
+                />
+              </div>
+
+              {/* Auto attach toggle */}
+              <button
+                onClick={() => updatePref("autoAttachContext", !prefs.autoAttachContext)}
+                className="w-full flex items-center justify-between py-1"
+              >
+                <div className="text-left">
+                  <span className="text-xs text-[#1a1a1a] dark:text-white">Send to AI に自動で付ける</span>
+                  <p className="text-[10px] text-[#9ca3af] mt-0.5">AIに送る時、先頭に「私について」を付けた状態でコピーします</p>
+                </div>
+                <div className={`w-10 h-6 rounded-full flex items-center px-0.5 shrink-0 ${prefs.autoAttachContext ? "bg-[#4F46E5]" : "bg-[#e5e7eb] dark:bg-[#333]"}`}>
+                  <div className={`w-5 h-5 rounded-full bg-white shadow-sm ${prefs.autoAttachContext ? "ml-4" : "ml-0"}`} />
+                </div>
+              </button>
+
+              {/* Preview */}
+              {hasPreferences(prefs) && (
+                <div>
+                  <button
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="text-[10px] text-[#4F46E5] font-mono"
+                  >
+                    {showPreview ? "プレビューを隠す" : "AIに渡される内容を見る"}
+                  </button>
+                  {showPreview && (
+                    <pre className="mt-2 p-3 rounded-lg bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] text-[10px] font-mono text-[#6b7280] dark:text-[#9ca3af] whitespace-pre-wrap leading-relaxed overflow-auto max-h-48">
+                      {buildPersonalContext(prefs)}
+                    </pre>
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  onClick={() => {
+                    clearPreferences();
+                    setPrefs({ ...DEFAULT_PREFERENCES });
+                    setPrefsSaved(false);
+                  }}
+                  className="text-[10px] text-red-400 font-mono"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => {
+                    savePreferences(prefs);
+                    setPrefsSaved(true);
+                    setTimeout(() => setPrefsSaved(false), 1500);
+                  }}
+                  className="text-[10px] font-medium text-white bg-[#1a1a1a] dark:bg-white dark:text-[#1a1a1a] px-4 py-1.5 rounded-full"
+                >
+                  {prefsSaved ? "Saved" : "保存"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* AI Review API Key */}
       <section className="mb-8">
         <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">AI Review</h2>
@@ -344,7 +545,7 @@ export default function SettingsPage() {
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           <div className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333] text-sm">
             <span className="text-[#1a1a1a] dark:text-white">Version</span>
-            <span className="text-[#9ca3af] font-mono text-xs">0.5.0</span>
+            <span className="text-[#9ca3af] font-mono text-xs">0.7.0</span>
           </div>
         </div>
       </section>
