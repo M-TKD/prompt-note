@@ -1,19 +1,31 @@
 import { Metadata } from "next";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import { TYPE_CONFIG } from "@/lib/types";
 import { PublicPromptClient } from "./PublicPromptClient";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+/**
+ * クライアントは遅延生成する。モジュール読み込み時に生成すると、
+ * 環境変数が欠けた環境で next build の "Collecting page data" が失敗し、
+ * デプロイ全体が落ちる。
+ */
+function getSupabase(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return url && key ? createClient(url, key) : null;
+}
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 async function getDocument(id: string) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    console.warn("Supabase is not configured. Public prompt pages are unavailable.");
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("documents")
     .select("*")

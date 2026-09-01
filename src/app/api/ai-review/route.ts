@@ -1,12 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const FREE_MONTHLY_LIMIT = 10;
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+/**
+ * Supabase クライアントは遅延生成する。
+ * モジュール読み込み時に生成すると、環境変数が1つ欠けただけで
+ * next build の "Collecting page data" が失敗し、デプロイ全体が落ちる。
+ * （プレビュー環境に env が設定されていない場合など）
+ */
+let cachedAdmin: SupabaseClient | null | undefined;
+
+function getSupabaseAdmin(): SupabaseClient | null {
+  if (cachedAdmin !== undefined) return cachedAdmin;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    console.warn("Supabase is not configured. AI Review falls back to the demo response.");
+    cachedAdmin = null;
+    return null;
+  }
+  cachedAdmin = createClient(url, key);
+  return cachedAdmin;
+}
 
 const SYSTEM_PROMPT = `あなたはプロンプトエンジニアリングの専門家です。
 ユーザーが書いたAI向けプロンプトを以下の5つの軸で評価し、改善版を提案してください。
@@ -62,6 +78,9 @@ ${hint}
 // Get monthly usage count for a user
 // -----------------------------------------------
 async function getMonthlyUsage(userId: string): Promise<number> {
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) return 0;
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
@@ -82,6 +101,9 @@ async function getMonthlyUsage(userId: string): Promise<number> {
 // Record usage
 // -----------------------------------------------
 async function recordUsage(userId: string): Promise<void> {
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) return;
+
   const { error } = await supabaseAdmin
     .from("ai_review_usage")
     .insert({ user_id: userId });
@@ -95,6 +117,9 @@ async function recordUsage(userId: string): Promise<void> {
 // Extract user from Supabase auth header
 // -----------------------------------------------
 async function getUserId(req: NextRequest): Promise<string | null> {
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) return null;
+
   const authHeader = req.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
 
@@ -127,7 +152,8 @@ export async function POST(req: NextRequest) {
     if (groqKey) {
       // Get user ID from access token
       let userId: string | null = null;
-      if (accessToken) {
+      const supabaseAdmin = getSupabaseAdmin();
+      if (accessToken && supabaseAdmin) {
         const { data: { user } } = await supabaseAdmin.auth.getUser(accessToken);
         userId = user?.id || null;
       }
