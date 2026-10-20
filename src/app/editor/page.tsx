@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { useToast } from "@/components/Toast";
@@ -17,6 +17,14 @@ import {
 } from "lucide-react";
 import { CollectionSheet } from "@/components/CollectionSheet";
 import { ShareSheet } from "@/components/ShareSheet";
+import {
+  loadPreferences,
+  resolvePersonalValues,
+  isPersonalToken,
+  hasPreferences,
+  withPersonalContext,
+  buildReviewerHint,
+} from "@/lib/personalization";
 
 function EditorContent() {
   const searchParams = useSearchParams();
@@ -506,7 +514,11 @@ function EditorContent() {
 function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (filled: string) => void; onClose: () => void }) {
   const { toast } = useToast();
   const vars = extractVariables(bodyMd);
-  const [values, setValues] = useState<Record<string, string>>({});
+  // 個人設定から埋められる変数は最初から入れておく
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    resolvePersonalValues(vars.map((v) => v.name))
+  );
+  const autoFilledCount = vars.filter((v) => isPersonalToken(v.name) && values[v.name]).length;
 
   return (
     <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
@@ -514,11 +526,25 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
         <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
         <h2 className="font-bold text-base text-center tracking-tight dark:text-white">Template Variables</h2>
         <p className="text-[11px] text-[#9ca3af] text-center font-mono">Fill in values to generate prompt</p>
+        {autoFilledCount > 0 ? (
+          <p className="text-[10px] text-[#4F46E5] text-center">個人設定から {autoFilledCount} 件を自動入力しました</p>
+        ) : (
+          vars.some((v) => isPersonalToken(v.name)) && (
+            <p className="text-[10px] text-[#9ca3af] text-center">
+              <a href="/settings" className="text-[#4F46E5] underline">Settings → Personalize</a> を設定すると自動入力できます
+            </p>
+          )
+        )}
 
         <div className="space-y-3 mt-4">
           {vars.map((v) => (
             <div key={v.name}>
-              <label className="text-[11px] font-mono text-[#6b7280] mb-1 block">{`{{${v.name}}}`}</label>
+              <label className="text-[11px] font-mono text-[#6b7280] mb-1 flex items-center gap-1.5">
+                {`{{${v.name}}}`}
+                {isPersonalToken(v.name) && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5] not-italic">個人設定</span>
+                )}
+              </label>
               <input
                 type="text"
                 value={values[v.name] || ""}
@@ -597,15 +623,29 @@ const AI_LOGOS: Record<string, React.ReactNode> = {
 function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: () => void }) {
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const prefs = useMemo(() => loadPreferences(), []);
+  const canPersonalize = hasPreferences(prefs);
+  const [attachContext, setAttachContext] = useState(canPersonalize && prefs.autoAttachContext);
+
+  const outgoingText = attachContext ? withPersonalContext(promptText, prefs) : promptText;
+
+  // よく使うAIを先頭に
+  const orderedApps = useMemo(() => {
+    if (!prefs.favoriteAI) return AI_APPS;
+    return [...AI_APPS].sort((a, b) =>
+      a.id === prefs.favoriteAI ? -1 : b.id === prefs.favoriteAI ? 1 : 0
+    );
+  }, [prefs.favoriteAI]);
+
   const handleSend = (app: typeof AI_APPS[number]) => {
-    navigator.clipboard.writeText(promptText);
+    navigator.clipboard.writeText(outgoingText);
     window.open(app.webUrl, "_blank");
     setCopiedId(app.id);
     toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 2000);
   };
   const handleCopyOnly = () => {
-    navigator.clipboard.writeText(promptText);
+    navigator.clipboard.writeText(outgoingText);
     setCopiedId("clipboard");
     toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 2000);
@@ -618,10 +658,31 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
         <h2 className="font-bold text-base text-center tracking-tight dark:text-white">Send to AI</h2>
         <div className="bg-[#fafafa] dark:bg-[#222] p-3 rounded-lg mb-2 border border-[#f0f0f0] dark:border-[#333]">
           <p className="text-[10px] text-[#9ca3af] mb-1 font-mono uppercase tracking-wider">Prompt</p>
-          <p className="text-sm text-[#404040] dark:text-[#e5e7eb] line-clamp-3 leading-relaxed">{promptText}</p>
+          <p className="text-sm text-[#404040] dark:text-[#e5e7eb] line-clamp-3 leading-relaxed">{outgoingText}</p>
         </div>
+
+        {/* 個人設定を先頭に付ける */}
+        {canPersonalize ? (
+          <button
+            onClick={() => setAttachContext(!attachContext)}
+            className="w-full flex items-center gap-2.5 p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] mb-1"
+          >
+            <div className={`w-9 h-5 rounded-full flex items-center px-0.5 shrink-0 ${attachContext ? "bg-[#4F46E5]" : "bg-[#e5e7eb] dark:bg-[#333]"}`}>
+              <div className={`w-4 h-4 rounded-full bg-white shadow-sm ${attachContext ? "ml-4" : "ml-0"}`} />
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-medium dark:text-white">「私について」を先頭に付ける</p>
+              <p className="text-[10px] text-[#9ca3af]">職種・トーン・出力言語などの前提を毎回書かずに済みます</p>
+            </div>
+          </button>
+        ) : (
+          <a href="/settings" className="block text-[10px] text-[#9ca3af] text-center py-1 no-underline">
+            <span className="text-[#4F46E5] underline">個人設定</span> を入れると、職種やトーンを毎回書かずに送れます
+          </a>
+        )}
+
         <div className="space-y-1">
-          {AI_APPS.map((app) => (
+          {orderedApps.map((app) => (
             <button key={app.id} onClick={() => handleSend(app)} className="w-full flex items-center gap-3 p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444]">
               <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#fafafa] dark:bg-[#222]">{AI_LOGOS[app.id] || app.icon}</span>
               <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">{app.name}</p><p className="text-[10px] text-[#9ca3af] font-mono">Copy & open</p></div>
@@ -662,11 +723,14 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
       const provider = typeof window !== "undefined" ? localStorage.getItem("promptnote_ai_provider") || "" : "";
       const apiKey = typeof window !== "undefined" ? localStorage.getItem("promptnote_ai_apikey") || "" : "";
       const accessToken = session?.access_token || "";
+      // 個人設定があれば、講評を職種・レベルに合わせてもらう
+      const prefs = loadPreferences();
+      const reviewerHint = hasPreferences(prefs) ? buildReviewerHint(prefs) : "";
 
       const res = await fetch("/api/ai-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bodyMd, provider, apiKey, accessToken }),
+        body: JSON.stringify({ bodyMd, provider, apiKey, accessToken, reviewerHint }),
       });
 
       if (!res.ok) {

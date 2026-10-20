@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
-import { PromptDocument, CATEGORIES, TYPE_CONFIG, SAMPLE_PROMPTS } from "@/lib/types";
-import { Heart, GitFork, Copy, Check, ExternalLink, Search, X, TrendingUp, Sparkles, Download } from "lucide-react";
+import { PromptDocument, CATEGORIES, TYPE_CONFIG, PromptLevel } from "@/lib/types";
+import { SAMPLE_PROMPTS, LEVEL_CONFIG, LEVEL_ORDER } from "@/lib/prompt-library";
+import Link from "next/link";
+import { Heart, GitFork, Copy, Check, ExternalLink, Search, X, TrendingUp, Sparkles, Download, Lightbulb, GraduationCap, ChevronRight } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { ShareSheet } from "@/components/ShareSheet";
 import { useToast } from "@/components/Toast";
@@ -23,7 +25,11 @@ function FeedContent() {
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [shareDoc, setShareDoc] = useState<PromptDocument | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const initialLevel = searchParams.get("level");
+  const [level, setLevel] = useState<PromptLevel | "all">(
+    LEVEL_ORDER.includes(initialLevel as PromptLevel) ? (initialLevel as PromptLevel) : "all"
+  );
 
   // Top 5 most popular for the featured banner
   const featuredDocs = useMemo(() => {
@@ -42,14 +48,18 @@ function FeedContent() {
 
   const filteredDocs = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return docs;
-    return docs.filter(d =>
+    // レベル絞り込みは公式ライブラリ（level を持つもの）にのみ効く
+    const byLevel = level === "all" ? docs : docs.filter(d => d.level === level);
+    if (!q) return byLevel;
+    return byLevel.filter(d =>
       (d.title || "").toLowerCase().includes(q) ||
       d.bodyMd.toLowerCase().includes(q) ||
+      (d.summary || "").toLowerCase().includes(q) ||
+      (d.technique || "").toLowerCase().includes(q) ||
       d.tags.some(t => t.toLowerCase().includes(q)) ||
       (d.author?.name || "").toLowerCase().includes(q)
     );
-  }, [docs, searchQuery]);
+  }, [docs, searchQuery, level]);
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -57,22 +67,23 @@ function FeedContent() {
       hybridStore.ensureSeedData();
       const dbDocuments = await hybridStore.getPublicDocuments(sort, category);
 
-      // Always merge SAMPLE_PROMPTS (filtered by category) to guarantee display
+      // 公式ライブラリは常にマージして表示する。
+      // id はカテゴリ絞り込みの前に確定させる（絞り込みで id がずれると、いいねが別の記事に付く）
       const sampleDocs: PromptDocument[] = SAMPLE_PROMPTS
-        .filter((s) => !category || category === "すべて" || s.tags.includes(category))
         .map((s, i) => ({
           ...s,
           id: `sample-${i}`,
           createdAt: new Date(Date.now() - i * 86400000).toISOString(),
           updatedAt: new Date(Date.now() - i * 3600000).toISOString(),
           author: { name: "PromptNotes Official" },
-        }));
+        }))
+        .filter((s) => !category || category === "すべて" || s.tags.includes(category));
 
       // Deduplicate: remove any DB docs that overlap with samples (by userId or title match)
       const sampleTitles = new Set(sampleDocs.map(s => s.title));
       const uniqueDbDocs = dbDocuments.filter(d => !sampleTitles.has(d.title) && !d.id.startsWith("sample-"));
 
-      let documents = [...uniqueDbDocs, ...sampleDocs];
+      const documents = [...uniqueDbDocs, ...sampleDocs];
       if (sort === "popular") {
         documents.sort((a, b) => b.likeCount - a.likeCount);
       } else {
@@ -138,11 +149,24 @@ function FeedContent() {
   };
 
   const handleFork = async (doc: PromptDocument) => {
-    const forked = await hybridStore.fork(doc.id);
+    // 公式ライブラリはDB上に実体がないため、fork() では引けない。中身をそのままコピーする
+    const forked = doc.id.startsWith("sample-")
+      ? await hybridStore.create({
+          userId: "local",
+          title: doc.title,
+          bodyMd: doc.bodyMd,
+          type: doc.type,
+          visibility: "private",
+          tags: [...doc.tags],
+        })
+      : await hybridStore.fork(doc.id);
+
     if (forked) {
       toast("フォークしました");
       setSelected(null);
       router.push(`/editor?id=${forked.id}`);
+    } else {
+      toast("フォークに失敗しました", "error");
     }
   };
 
@@ -206,12 +230,57 @@ function FeedContent() {
         </div>
       )}
 
+      {/* はじめかたへの導線 */}
+      {!searchQuery && (
+        <Link
+          href="/learn"
+          className="flex items-center gap-2.5 p-3 mb-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] no-underline hover:border-[#4F46E5]/30"
+        >
+          <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center shrink-0">
+            <GraduationCap className="w-4 h-4 text-[#4F46E5]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-[#1a1a1a] dark:text-white">はじめかたガイド</p>
+            <p className="text-[10px] text-[#9ca3af]">最初にやる5本 / できること集 / MCP集</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#d1d5db] shrink-0" />
+        </Link>
+      )}
+
+      {/* Level: 入門 / 初級 / 中級 / 上級 */}
+      <div className="mb-4">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {(["all" as const, ...LEVEL_ORDER]).map((key) => {
+            const count = key === "all" ? docs.length : docs.filter(d => d.level === key).length;
+            const label = key === "all" ? "すべて" : LEVEL_CONFIG[key].label;
+            return (
+              <button
+                key={key}
+                onClick={() => setLevel(key)}
+                className={`flex-1 min-w-[64px] px-2.5 py-2 rounded-xl text-[11px] font-medium border whitespace-nowrap ${
+                  level === key
+                    ? "border-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/15 text-[#4F46E5]"
+                    : "border-[#f0f0f0] dark:border-[#333] text-[#6b7280] dark:text-[#9ca3af]"
+                }`}
+              >
+                {label}
+                <span className="ml-1 font-mono text-[9px] opacity-60">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+        {level !== "all" && (
+          <p className="text-[10px] text-[#9ca3af] mt-2 leading-relaxed">{LEVEL_CONFIG[level].description}</p>
+        )}
+      </div>
+
       {/* Categories with count badges */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
         {CATEGORIES.map((cat) => {
+          const scoped = level === "all" ? docs : docs.filter(d => d.level === level);
           const count = cat === "すべて"
-            ? docs.length
-            : docs.filter(d => d.tags.includes(cat)).length;
+            ? scoped.length
+            : scoped.filter(d => d.tags.includes(cat)).length;
           return (
             <button
               key={cat}
@@ -274,11 +343,20 @@ function FeedContent() {
                 onClick={() => setSelected(doc)}
                 className="p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] bg-white dark:bg-[#141414] cursor-pointer hover:border-[#4F46E5]/30 active:bg-[#fafafa] dark:active:bg-[#1a1a1a] flex flex-col"
               >
-                {/* Icon + Type */}
-                <div className="flex items-center gap-2 mb-2">
+                {/* Icon + Level + Type */}
+                <div className="flex items-center gap-1.5 mb-2">
                   <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center shrink-0">
                     <span className="text-[#4F46E5] text-xs font-bold">{TYPE_CONFIG[doc.type].icon}</span>
                   </div>
+                  {doc.level && (
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                      doc.level === "basic"
+                        ? "bg-[#f5f5f5] dark:bg-[#222] text-[#6b7280] dark:text-[#9ca3af]"
+                        : "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]"
+                    }`}>
+                      {LEVEL_CONFIG[doc.level].label}
+                    </span>
+                  )}
                   {doc.tags[0] && (
                     <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#f5f5f5] dark:bg-[#222] text-[#6b7280] dark:text-[#9ca3af] font-medium truncate">
                       {doc.tags[0]}
@@ -289,8 +367,8 @@ function FeedContent() {
                 {/* Title */}
                 <p className="font-bold text-[12px] text-[#1a1a1a] dark:text-white line-clamp-2 leading-snug mb-1">{displayTitle}</p>
 
-                {/* Preview */}
-                <p className="text-[10px] text-[#9ca3af] line-clamp-2 leading-relaxed mb-auto">{bodyPreview}</p>
+                {/* Summary（公式）or 本文プレビュー */}
+                <p className="text-[10px] text-[#9ca3af] line-clamp-2 leading-relaxed mb-auto">{doc.summary || bodyPreview}</p>
 
                 {/* Footer: author + stats */}
                 <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[#f5f5f5] dark:border-[#222]">
@@ -355,13 +433,47 @@ function FeedContent() {
               </button>
             )}
 
-            <div className="flex gap-1.5 mb-3">
+            <div className="flex gap-1.5 mb-3 flex-wrap items-center">
+              {selected.level && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                  selected.level === "basic"
+                    ? "bg-[#f5f5f5] dark:bg-[#222] text-[#6b7280] dark:text-[#9ca3af]"
+                    : "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]"
+                }`}>
+                  {LEVEL_CONFIG[selected.level].label}
+                </span>
+              )}
               <span className="text-[10px] text-[#9ca3af] font-mono">{TYPE_CONFIG[selected.type].label}</span>
               {selected.tags.map((t) => <span key={t} className="text-[10px] text-[#d1d5db] font-mono">#{t}</span>)}
             </div>
+
+            {selected.summary && (
+              <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] leading-relaxed mb-3">{selected.summary}</p>
+            )}
+            {selected.technique && (
+              <p className="text-[10px] text-[#4F46E5] font-mono mb-3">技法: {selected.technique}</p>
+            )}
+
             <div className="markdown-preview bg-[#fafafa] dark:bg-[#222] p-4 rounded-xl mb-4 border border-[#f0f0f0] dark:border-[#333]">
               <MarkdownPreview content={selected.bodyMd} />
             </div>
+
+            {selected.tips && selected.tips.length > 0 && (
+              <div className="mb-4 p-4 rounded-xl bg-[#FFFBEB] dark:bg-[#78350f]/15 border border-[#FDE68A] dark:border-[#78350f]/40">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Lightbulb className="w-3.5 h-3.5 text-[#D97706]" />
+                  <span className="text-[10px] font-bold text-[#D97706] tracking-wide uppercase">Tips</span>
+                </div>
+                <ul className="space-y-1.5">
+                  {selected.tips.map((tip, i) => (
+                    <li key={i} className="text-[11px] text-[#78350f] dark:text-[#FDE68A] leading-relaxed flex gap-1.5">
+                      <span className="opacity-50">・</span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="flex gap-2">
               <button onClick={() => handleCopy(selected)} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]">
                 <Copy className="w-3.5 h-3.5" /> Copy

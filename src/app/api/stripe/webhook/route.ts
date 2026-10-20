@@ -1,14 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-02-25.clover" });
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+/**
+ * Stripe / Supabase のクライアントは遅延生成する。
+ * モジュール読み込み時に生成すると、環境変数が1つ欠けただけで
+ * next build の "Collecting page data" が失敗し、デプロイ全体が落ちる。
+ */
+function getStripe(): Stripe | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  return key ? new Stripe(key, { apiVersion: "2026-02-25.clover" }) : null;
+}
+
+function getSupabaseAdmin(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return url && key ? createClient(url, key) : null;
+}
 
 export async function POST(req: NextRequest) {
+  const stripe = getStripe();
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!stripe || !supabaseAdmin) {
+    console.error("Stripe or Supabase is not configured.");
+    return NextResponse.json({ error: "Not configured" }, { status: 503 });
+  }
+
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 

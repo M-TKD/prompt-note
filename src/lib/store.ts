@@ -1,7 +1,8 @@
-import { PromptDocument, SAMPLE_PROMPTS } from "./types";
+import { PromptDocument } from "./types";
 
 const STORAGE_KEY = "promptnote_documents";
 const SEED_KEY = "promptnote_seeded_v2";
+const LIBRARY_SYNC_KEY = "promptnote_library_v3";
 const DRAFT_KEY = "promptnote_draft";
 
 function getAll(): PromptDocument[] {
@@ -15,18 +16,18 @@ function saveAll(docs: PromptDocument[]) {
 }
 
 export const store = {
+  /**
+   * 公式ライブラリは types 側の定数から毎回描画するため、localStorage には複製しない。
+   * 旧バージョン（v2以前）でコピーされたサンプルは内容が古くなるので、ここで一度だけ掃除する。
+   * ユーザーが Fork したものは userId が "local" なので影響を受けない。
+   */
   ensureSeedData() {
     if (typeof window === "undefined") return;
-    if (localStorage.getItem(SEED_KEY)) return;
-    const existing = getAll();
-    const samples: PromptDocument[] = SAMPLE_PROMPTS.map((s, i) => ({
-      ...s,
-      id: `sample-${i}-${Date.now()}`,
-      createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-      updatedAt: new Date(Date.now() - i * 3600000).toISOString(),
-    }));
-    saveAll([...existing, ...samples]);
-    localStorage.setItem(SEED_KEY, new Date().toISOString());
+    if (localStorage.getItem(LIBRARY_SYNC_KEY)) return;
+    const cleaned = getAll().filter((d) => d.userId !== "sample");
+    saveAll(cleaned);
+    localStorage.removeItem(SEED_KEY);
+    localStorage.setItem(LIBRARY_SYNC_KEY, new Date().toISOString());
   },
 
   getDocuments(): PromptDocument[] {

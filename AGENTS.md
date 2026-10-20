@@ -17,6 +17,17 @@
 - **Management API が最も信頼できるDB操作方法** — `POST https://api.supabase.com/v1/projects/{ref}/database/query` + Supabase access token
 - **テーブル構造はコードと一致させること** — 先にスキーマを定義してからコードを書く、またはコードに合わせてスキーマを作る。二重管理は事故の元
 
+#### v0.6.0 プロンプトライブラリ再構成で学んだこと
+- **テンプレート変数の記法は必ず `{{二重波括弧}}`** — `{例：…}` の一重波括弧は `extractVariables()` に拾われず、Variables シートが機能しない。フリーランス系10本がこの状態で放置されていた
+- **公式ライブラリを localStorage に複製しない** — 旧 `ensureSeedData()` はサンプルをローカルにコピーしていたため、ライブラリを更新しても既存ユーザーには古い内容が残り続けた。定数から毎回描画し、旧コピーは掃除する
+- **Explore の公式プロンプトは DB に実体が無い** — `fork(id)` は id 検索なので `sample-N` では引けず、Fork ボタンが無反応だった。中身を `create()` でコピーする
+- **絞り込んでから index で id を振らない** — カテゴリで filter した後に `sample-${i}` を振ると、カテゴリを変えるたび id がずれて「いいね」が別の記事に付く
+
+#### v0.7.0 デプロイ失敗で学んだこと
+- **外部サービスのクライアントをモジュールのトップレベルで生成しない** — `createClient(process.env.X!)` のような書き方だと、環境変数が1つ欠けただけで `next build` の "Collecting page data" が失敗し、デプロイ全体が落ちる。遅延生成にして、未設定ならその機能だけ無効にする
+- **Vercel の環境変数は Production / Preview / Development で別管理** — Production にしか設定していないと、プレビューデプロイだけが失敗する。本番が通っているので気づきにくい
+- **ビルドが落ちた時はクリーンなクローンで再現を試す** — コミット漏れとコンパイルエラーを切り分けられる。通るなら原因は環境側
+
 #### 一般的な学び
 - **ユーザーは非エンジニア** — 手動操作を最小限にし、可能な限り自動化する
 - **ビルド確認は必ず行う** — コード変更後は `npx next build` でエラーチェック
@@ -37,4 +48,10 @@
 - Vercel (auto-deploy from GitHub)
 - Design: モノクロ + アクセント #4F46E5 (indigo)
 
-### 現在のバージョン: v0.4.1
+### 主要ファイル
+- `src/lib/prompt-library.ts` — 公式プロンプトライブラリ。入門5 / 初級15 / 中級21 / 上級11 の4段階（`STARTER_PROMPTS` / `BASIC_PROMPTS` / `INTERMEDIATE_PROMPTS` / `ADVANCED_PROMPTS`）と `PROMPT_TIPS`
+- `src/lib/learn.ts` — はじめかたガイド（`/learn`）の中身。`LEARNING_PATH`（ロードマップ）/ `AI_USE_CASES`（できること集）/ `MCP_SERVERS`（MCP集）。プロンプトの参照は title 完全一致で `/feed?q=` に渡す
+- `src/lib/personalization.ts` — 個人設定。職種・文体などを localStorage に保存し、`{{私の職種}}` 等の自動補完と「私について」ブロックの生成を行う
+- `src/lib/types.ts` — 型定義と `extractVariables` / `fillTemplate`
+
+### 現在のバージョン: v0.7.0
