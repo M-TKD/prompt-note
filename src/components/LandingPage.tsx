@@ -329,6 +329,10 @@ export default function LandingPage() {
             <Link href="/terms" className="hover:text-[#6b7280] transition-colors">利用規約</Link>
             <Link href="/privacy" className="hover:text-[#6b7280] transition-colors">プライバシー</Link>
             <Link href="/howto" className="hover:text-[#6b7280] transition-colors">使い方</Link>
+            {/* 運営ブランド Craftbase の他ツールへの導線（別サイトなので <a> を使う） */}
+            <a href="https://craftbaseapp.com/" className="hover:text-[#6b7280] transition-colors">
+              Craftbase の他のツール
+            </a>
           </div>
           <p className="text-[10px] text-[#d1d5db] dark:text-[#333] font-mono">
             © 2026 PromptNotes

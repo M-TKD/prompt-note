@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useStore } from "@/lib/use-store";
-import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, FileText, Shield, Cloud, HardDrive, AlertTriangle, Upload, Download } from "lucide-react";
+import { HelpCircle, ChevronRight, Moon, Sun, Trash2, LogOut, User, Key, Eye, EyeOff, FileText, Shield, Cloud, HardDrive, AlertTriangle, Upload, Download, ExternalLink } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -297,6 +297,14 @@ export default function SettingsPage() {
             </div>
             <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
           </Link>
+          {/* 運営ブランド Craftbase のTOP（請求書作成など他のツール）へ */}
+          <a href="https://craftbaseapp.com/" className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
+            <div className="flex items-center gap-2.5">
+              <ExternalLink className="w-4 h-4 text-[#9ca3af]" />
+              <span className="text-sm text-[#1a1a1a] dark:text-white">Craftbase の他のツール</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
+          </a>
         </div>
       </section>
 
