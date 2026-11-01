@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/AppShell";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/Toast";
 
@@ -20,11 +20,11 @@ const SITE_URL = "https://prompt-notes.ai";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "PromptNotes — 書いて、磨いて、シェアしよう。",
+    default: "Prompt Notes｜AIへの指示を、次の仕事でも。",
     template: "%s | PromptNotes",
   },
   description:
-    "AIプロンプトを保存・編集・共有できる無料サービス。テンプレートやAIレビュー機能で、あなたのプロンプトをもっと良くしよう。",
+    "よく使うAIへの指示を保存し、条件を変えて再利用。登録なしの端末内保存から始められ、無料アカウントでクラウド同期も利用できます。",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -39,9 +39,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "PromptNotes",
-    title: "PromptNotes — 書いて、磨いて、シェアしよう。",
+    title: "Prompt Notes｜AIへの指示を、次の仕事でも。",
     description:
-      "AIプロンプトを保存・編集・共有できる無料サービス。テンプレートやAIレビュー機能で、あなたのプロンプトをもっと良くしよう。",
+      "よく使うAIへの指示を保存し、条件を変えて再利用。登録なしの端末内保存から始められ、無料アカウントでクラウド同期も利用できます。",
     url: SITE_URL,
     images: [
       {
@@ -54,9 +54,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "PromptNotes — 書いて、磨いて、シェアしよう。",
+    title: "Prompt Notes｜AIへの指示を、次の仕事でも。",
     description:
-      "AIプロンプトを保存・編集・共有できる無料サービス。テンプレートやAIレビュー機能で、あなたのプロンプトをもっと良くしよう。",
+      "よく使うAIへの指示を保存し、条件を変えて再利用。登録なしの端末内保存から始められ、無料アカウントでクラウド同期も利用できます。",
     images: ["/api/og"],
   },
 };
@@ -81,10 +81,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ToastProvider>
-            <main className="pb-16 max-w-lg md:max-w-3xl mx-auto md:px-6">
-              {children}
-            </main>
-            <BottomNav />
+            <AppShell>{children}</AppShell>
           </ToastProvider>
         </AuthProvider>
       </body>

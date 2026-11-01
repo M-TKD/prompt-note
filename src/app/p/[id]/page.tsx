@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import { TYPE_CONFIG } from "@/lib/types";
@@ -115,19 +116,19 @@ export default async function PublicPromptPage({ params }: Props) {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a
+          <Link
             href="/"
             className="flex items-center no-underline"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-horizontal.png" alt="PromptNotes" className="h-8 w-auto dark:invert" />
-          </a>
-          <a
+          </Link>
+          <Link
             href="/"
             className="text-sm px-4 py-2 bg-[#4F46E5] text-white rounded-full font-medium no-underline hover:bg-[#4338CA] transition-colors"
           >
             PromptNotesで開く
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -205,12 +206,12 @@ export default async function PublicPromptPage({ params }: Props) {
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             プロンプトの保存、共有、AI レビューが無料で使えます
           </p>
-          <a
+          <Link
             href="/"
             className="inline-block px-6 py-3 bg-[#4F46E5] text-white rounded-full font-medium no-underline hover:bg-[#4338CA] transition-colors"
           >
             PromptNotesを始める
-          </a>
+          </Link>
         </div>
       </main>
 

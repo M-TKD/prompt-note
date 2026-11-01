@@ -25,6 +25,8 @@ export default function SettingsPage() {
   useEffect(() => {
     const saved = localStorage.getItem("promptnote_darkmode");
     if (saved === "1") {
+      // 端末内の保存設定は、サーバー描画後に一度だけ画面へ反映する。
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDarkMode(true);
       document.documentElement.classList.add("dark");
     }

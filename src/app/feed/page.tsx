@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { canSharePublicDocument } from "@/lib/document-access";
+
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/use-store";
-import { PromptDocument, CATEGORIES, TYPE_CONFIG, SAMPLE_PROMPTS } from "@/lib/types";
-import { Heart, GitFork, Copy, Check, ExternalLink, Search, X, TrendingUp, Sparkles, Download } from "lucide-react";
+import { PromptDocument, CATEGORIES, TYPE_CONFIG } from "@/lib/types";
+import { Heart, GitFork, Copy, Check, ExternalLink, Search, X, Sparkles, Download } from "lucide-react";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
 import { ShareSheet } from "@/components/ShareSheet";
 import { useToast } from "@/components/Toast";
+import { getOfficialTemplates, isOfficialTemplate, duplicateOfficialTemplate, copyPromptText } from "@/lib/official-templates";
 
 function FeedContent() {
   const router = useRouter();
@@ -25,10 +29,37 @@ function FeedContent() {
   const [shareDoc, setShareDoc] = useState<PromptDocument | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Top 5 most popular for the featured banner
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // 詳細を閉じるまでフォーカスを保持し、Escと元の操作位置への復帰に対応する。
+  useEffect(() => {
+    if (!selected) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelected(null);
+      if (event.key !== "Tab") return;
+      const controls = modalRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input, [tabindex="0"]');
+      if (!controls?.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKey);
+      previousFocus?.focus();
+    };
+  }, [selected]);
+
+  // 公式テンプレートは利用実績によるランキングに混ぜない。
   const featuredDocs = useMemo(() => {
-    return [...docs]
-      .sort((a, b) => b.likeCount - a.likeCount)
+    return docs.filter(isOfficialTemplate)
       .slice(0, 5);
   }, [docs]);
 
@@ -55,35 +86,18 @@ function FeedContent() {
     setLoading(true);
     try {
       hybridStore.ensureSeedData();
-      const dbDocuments = await hybridStore.getPublicDocuments(sort, category);
+      const dbDocuments = hybridStore.isCloud ? await hybridStore.getPublicDocuments(sort, category) : [];
 
-      // Always merge SAMPLE_PROMPTS (filtered by category) to guarantee display
-      const sampleDocs: PromptDocument[] = SAMPLE_PROMPTS
-        .filter((s) => !category || category === "すべて" || s.tags.includes(category))
-        .map((s, i) => ({
-          ...s,
-          id: `sample-${i}`,
-          createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-          updatedAt: new Date(Date.now() - i * 3600000).toISOString(),
-          author: { name: "PromptNotes Official" },
-        }));
-
-      // Deduplicate: remove any DB docs that overlap with samples (by userId or title match)
-      const sampleTitles = new Set(sampleDocs.map(s => s.title));
-      const uniqueDbDocs = dbDocuments.filter(d => !sampleTitles.has(d.title) && !d.id.startsWith("sample-"));
-
-      let documents = [...uniqueDbDocs, ...sampleDocs];
-      if (sort === "popular") {
-        documents.sort((a, b) => b.likeCount - a.likeCount);
-      } else {
-        documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      }
+      // 採番済みの公式資料をカテゴリで絞り、実際の公開投稿とは分けて扱う。
+      const sampleDocs = getOfficialTemplates(category);
+      const uniqueDbDocs = dbDocuments.filter(doc => !isOfficialTemplate(doc) && !doc.id.startsWith("sample-"));
+      const documents = [...uniqueDbDocs, ...sampleDocs];
       setDocs(documents);
 
       // Resolve liked state for all documents
       const liked = new Set<string>();
       await Promise.all(
-        documents.map(async (doc) => {
+        documents.filter(doc => !isOfficialTemplate(doc)).map(async (doc) => {
           const isLiked = await hybridStore.isLiked(doc.id);
           if (isLiked) liked.add(doc.id);
         })
@@ -116,8 +130,9 @@ function FeedContent() {
     fetchDocs();
   };
 
-  const handleCopy = (doc: PromptDocument) => {
-    navigator.clipboard.writeText(doc.bodyMd);
+  const handleCopy = async (doc: PromptDocument) => {
+    const success = await copyPromptText(doc.bodyMd, navigator.clipboard);
+    if (!success) { toast("コピーできませんでした。本文を選択してコピーするか、.mdで保存してください", "error"); return; }
     setCopiedId(doc.id);
     toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 1500);
@@ -138,19 +153,23 @@ function FeedContent() {
   };
 
   const handleFork = async (doc: PromptDocument) => {
-    const forked = await hybridStore.fork(doc.id);
-    if (forked) {
-      toast("フォークしました");
-      setSelected(null);
-      router.push(`/editor?id=${forked.id}`);
-    }
+    try {
+      const forked = isOfficialTemplate(doc)
+        ? await duplicateOfficialTemplate(doc, data => hybridStore.create(data))
+        : await hybridStore.fork(doc.id);
+      if (forked) {
+        toast("自分のノートに非公開で保存しました");
+        setSelected(null);
+        router.push(`/editor?id=${forked.id}`);
+      } else { toast("保存できませんでした。もう一度お試しください", "error"); }
+    } catch { toast("保存できませんでした。もう一度お試しください", "error"); }
   };
 
   return (
     <div className="px-4 pt-14 md:w-screen md:relative md:left-1/2 md:-translate-x-1/2 md:px-10 lg:px-16">
       <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Explore</h1>
-        <p className="text-xs text-[#9ca3af] mt-1 font-mono">Community prompts</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">テンプレートを探す</h1>
+        <p className="text-xs text-[#9ca3af] mt-1 font-mono">公式テンプレートと公開プロンプト。自分のノートに保存して使えます。</p>
       </div>
 
       {/* Search */}
@@ -175,31 +194,28 @@ function FeedContent() {
         <div className="mb-5">
           <div className="flex items-center gap-1.5 mb-2.5">
             <Sparkles className="w-3.5 h-3.5 text-[#4F46E5]" />
-            <span className="text-[11px] font-bold text-[#1a1a1a] dark:text-white tracking-wide">PICKUP</span>
+            <span className="text-[11px] font-bold text-[#1a1a1a] dark:text-white tracking-wide">公式テンプレート</span>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 md:-mx-10 md:px-10 lg:-mx-16 lg:px-16">
             {featuredDocs.map((doc, i) => {
               const title = doc.title || doc.bodyMd.split("\n")[0]?.replace(/^#+\s*/, "").slice(0, 30) || "Untitled";
               return (
-                <div
+                <button
+                  type="button"
                   key={`featured-${doc.id}`}
                   onClick={() => setSelected(doc)}
                   className={`shrink-0 w-[200px] md:w-[280px] lg:w-[300px] p-4 md:p-5 rounded-2xl bg-gradient-to-br ${FEATURED_GRADIENTS[i % FEATURED_GRADIENTS.length]} cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all`}
                 >
                   <div className="flex items-center gap-1.5 mb-2">
-                    <TrendingUp className="w-3 h-3 text-white/70" />
-                    <span className="text-[9px] font-mono text-white/70 uppercase tracking-wider">#{i + 1} Popular</span>
+                    <span className="text-[11px] text-white/90">すぐ使える指示のひな形</span>
                   </div>
                   <p className="text-white font-bold text-[13px] leading-tight line-clamp-2 mb-2">{title}</p>
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1 text-white/80 text-[10px]">
-                      <Heart className="w-3 h-3" /> {doc.likeCount}
-                    </span>
                     {doc.tags[0] && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/20 text-white/90">{doc.tags[0]}</span>
                     )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -238,8 +254,8 @@ function FeedContent() {
       {/* Sort */}
       <div className="flex gap-4 mb-6 text-[11px] border-b border-[#f0f0f0] dark:border-[#333]">
         {[
-          { key: "popular" as const, label: "Popular" },
-          { key: "recent" as const, label: "Recent" },
+          { key: "popular" as const, label: "公開投稿：人気順" },
+          { key: "recent" as const, label: "公開投稿：新着順" },
         ].map((s) => (
           <button
             key={s.key}
@@ -256,12 +272,12 @@ function FeedContent() {
       {/* Feed */}
       {loading ? (
         <div className="text-center py-28">
-          <p className="text-[#d1d5db] text-sm font-mono">Loading...</p>
+          <p className="text-[#6b7280] text-sm">読み込み中…</p>
         </div>
       ) : filteredDocs.length === 0 ? (
         <div className="text-center py-28">
-          <p className="text-[#d1d5db] text-sm">{searchQuery ? "検索結果がありません" : "No public prompts yet"}</p>
-          <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">{searchQuery ? `"${searchQuery}" に一致するプロンプトが見つかりません` : "Be the first"}</p>
+          <p className="text-[#d1d5db] text-sm">{searchQuery ? "検索結果がありません" : "公開されたプロンプトはまだありません"}</p>
+          <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">{searchQuery ? `"${searchQuery}" に一致するプロンプトが見つかりません` : "公式テンプレートや自分のノートから始めてみてください"}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 md:gap-4 pb-24">
@@ -271,7 +287,10 @@ function FeedContent() {
             return (
               <div
                 key={doc.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelected(doc)}
+                onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setSelected(doc); } }}
                 className="p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] bg-white dark:bg-[#141414] cursor-pointer hover:border-[#4F46E5]/30 active:bg-[#fafafa] dark:active:bg-[#1a1a1a] flex flex-col"
               >
                 {/* Icon + Type */}
@@ -287,10 +306,10 @@ function FeedContent() {
                 </div>
 
                 {/* Title */}
-                <p className="font-bold text-[12px] text-[#1a1a1a] dark:text-white line-clamp-2 leading-snug mb-1">{displayTitle}</p>
+                <p className="font-bold text-sm text-[#1a1a1a] dark:text-white line-clamp-2 leading-snug mb-1">{displayTitle}</p>
 
                 {/* Preview */}
-                <p className="text-[10px] text-[#9ca3af] line-clamp-2 leading-relaxed mb-auto">{bodyPreview}</p>
+                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] line-clamp-2 leading-relaxed mb-auto">{bodyPreview}</p>
 
                 {/* Footer: author + stats */}
                 <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[#f5f5f5] dark:border-[#222]">
@@ -299,7 +318,7 @@ function FeedContent() {
                       {doc.author.name.split(" ")[0]}
                     </span>
                   )}
-                  <div className="flex items-center gap-1.5 ml-auto">
+                  {isOfficialTemplate(doc) ? <span className="text-[10px] text-[#4F46E5]">公式テンプレート</span> : <div className="flex items-center gap-1.5 ml-auto">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleLike(doc.id); }}
                       className={`flex items-center gap-0.5 text-[9px] font-medium ${
@@ -317,7 +336,7 @@ function FeedContent() {
                         {doc.forkCount}
                       </span>
                     )}
-                  </div>
+                  </div>}
                 </div>
               </div>
             );
@@ -325,83 +344,43 @@ function FeedContent() {
         </div>
       )}
 
-      {/* Detail modal */}
-      {selected && (
-        <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={() => setSelected(null)}>
-          <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-4" />
-            <h2 className="font-bold text-base tracking-tight mb-2 dark:text-white">{selected.title || "Prompt Detail"}</h2>
-
-            {/* Author in modal */}
-            {selected.author && (
-              <button
-                onClick={() => { setSelected(null); router.push(`/profile?userId=${selected.userId}`); }}
-                className="flex items-center gap-1.5 mb-3"
-              >
-                {selected.author.avatarUrl ? (
-                  <img
-                    src={selected.author.avatarUrl}
-                    alt=""
-                    className="w-6 h-6 rounded-full object-cover ring-1 ring-[#e5e7eb] dark:ring-[#444]"
-                  />
-                ) : (
-                  <span className="w-6 h-6 rounded-full bg-[#f3f4f6] dark:bg-[#2a2a2a] flex items-center justify-center text-[10px] font-bold text-[#9ca3af] dark:text-[#6b7280]">
-                    {selected.author.name[0].toUpperCase()}
-                  </span>
-                )}
-                <span className="text-[11px] text-[#9ca3af] dark:text-[#6b7280] font-mono">
-                  {selected.author.name}
-                </span>
-              </button>
-            )}
-
-            <div className="flex gap-1.5 mb-3">
-              <span className="text-[10px] text-[#9ca3af] font-mono">{TYPE_CONFIG[selected.type].label}</span>
-              {selected.tags.map((t) => <span key={t} className="text-[10px] text-[#d1d5db] font-mono">#{t}</span>)}
+      {/* 詳細をbody直下に置き、下ナビや変形された親要素より前に表示する。 */}
+      {selected && createPortal(
+        <div className="fixed inset-0 bg-black/40 z-[100] flex items-end md:items-center justify-center p-2 md:p-6" onClick={() => setSelected(null)}>
+          <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="template-detail-title" className="bg-white dark:bg-[#1a1a1a] w-full max-w-2xl rounded-2xl flex flex-col max-h-[90dvh] shadow-xl" onClick={event => event.stopPropagation()}>
+            <div className="flex items-start gap-3 p-5 border-b border-[#e5e7eb] dark:border-[#333] shrink-0">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-[#4F46E5] mb-1">{isOfficialTemplate(selected) ? "公式テンプレート" : "公開プロンプト"}</p>
+                <h2 id="template-detail-title" className="font-bold text-base dark:text-white">{selected.title || "プロンプトの詳細"}</h2>
+                <p className="text-xs text-[#6b7280] mt-1">{TYPE_CONFIG[selected.type].label} · {selected.tags.join(" / ")}</p>
+              </div>
+              <button ref={closeRef} type="button" onClick={() => setSelected(null)} aria-label="詳細を閉じる" className="p-2 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-[#333] dark:text-white focus-visible:outline-2 focus-visible:outline-[#4F46E5]"><X className="w-5 h-5" /></button>
             </div>
-            <div className="markdown-preview bg-[#fafafa] dark:bg-[#222] p-4 rounded-xl mb-4 border border-[#f0f0f0] dark:border-[#333]">
+            <div className="overflow-y-auto min-h-0 p-5 markdown-preview">
+              {!isOfficialTemplate(selected) && selected.author && <p className="text-xs text-[#6b7280] mb-4">投稿者：{selected.author.name}</p>}
               <MarkdownPreview content={selected.bodyMd} />
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => handleCopy(selected)} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]">
-                <Copy className="w-3.5 h-3.5" /> Copy
-              </button>
-              <button
-                onClick={() => handleFork(selected)}
-                className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] rounded-xl text-xs font-medium text-center flex items-center justify-center gap-1"
-              >
-                <GitFork className="w-3.5 h-3.5" /> Fork
-              </button>
+            <div className="p-4 border-t border-[#e5e7eb] dark:border-[#333] shrink-0 bg-white dark:bg-[#1a1a1a] rounded-b-2xl">
+              <div className="flex gap-2">
+                <button onClick={() => handleCopy(selected)} className="flex-1 py-3 border border-[#d1d5db] dark:border-[#555] rounded-xl text-sm font-medium flex items-center justify-center gap-1 dark:text-white">
+                  {copiedId === selected.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />} コピー
+                </button>
+                <button onClick={() => handleFork(selected)} className="flex-1 py-3 bg-[#4F46E5] text-white rounded-xl text-sm font-medium flex items-center justify-center gap-1"><GitFork className="w-4 h-4" /> 保存して編集</button>
+              </div>
+              <div className="flex flex-wrap justify-center gap-4 mt-3 text-xs text-[#6b7280] dark:text-[#ccc]">
+                <button onClick={() => handleDownload(selected)} className="inline-flex gap-1 items-center py-1"><Download className="w-3.5 h-3.5" /> .mdで保存</button>
+                {!isOfficialTemplate(selected) && canSharePublicDocument(hybridStore.isCloud, selected.visibility, selected.id) && <>
+                  <button onClick={() => { setSelected(null); setShareDoc(selected); }} className="py-1">SNSで共有</button>
+                  <a href={`/p/${selected.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex gap-1 items-center py-1"><ExternalLink className="w-3.5 h-3.5" /> 公開ページ</a>
+                </>}
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              <button
-                onClick={() => handleDownload(selected)}
-                className="py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb]"
-              >
-                <Download className="w-3.5 h-3.5" /> .md
-              </button>
-              <button
-                onClick={() => { setSelected(null); setShareDoc(selected); }}
-                className="py-2.5 bg-[#4F46E5] text-white rounded-xl text-xs font-medium flex items-center justify-center gap-1"
-              >
-                SNSで共有
-              </button>
-              <a
-                href={`/p/${selected.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2.5 border border-[#f0f0f0] dark:border-[#333] rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#fafafa] dark:hover:bg-[#222] dark:text-[#e5e7eb] no-underline text-[#1a1a1a] dark:text-[#e5e7eb]"
-              >
-                <ExternalLink className="w-3.5 h-3.5" /> 詳細
-              </a>
-            </div>
-            <button onClick={() => setSelected(null)} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
           </div>
-        </div>
+        </div>, document.body
       )}
 
       {/* SNS Share Sheet */}
-      {shareDoc && (
+      {shareDoc && !isOfficialTemplate(shareDoc) && (
         <ShareSheet
           url={`https://prompt-notes.ai/p/${shareDoc.id}`}
           title={shareDoc.title || "Prompt"}
@@ -418,7 +397,7 @@ export default function FeedPage() {
     <Suspense fallback={
       <div className="px-6 pt-14">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">Explore</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">テンプレートを探す</h1>
           <p className="text-xs text-[#9ca3af] mt-1 font-mono">Loading...</p>
         </div>
       </div>
