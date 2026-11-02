@@ -1,7 +1,6 @@
-import { PromptDocument, SAMPLE_PROMPTS } from "./types";
+import type { PromptDocument } from "./types";
 
 const STORAGE_KEY = "promptnote_documents";
-const SEED_KEY = "promptnote_seeded_v2";
 const DRAFT_KEY = "promptnote_draft";
 
 function getAll(): PromptDocument[] {
@@ -16,17 +15,7 @@ function saveAll(docs: PromptDocument[]) {
 
 export const store = {
   ensureSeedData() {
-    if (typeof window === "undefined") return;
-    if (localStorage.getItem(SEED_KEY)) return;
-    const existing = getAll();
-    const samples: PromptDocument[] = SAMPLE_PROMPTS.map((s, i) => ({
-      ...s,
-      id: `sample-${i}-${Date.now()}`,
-      createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-      updatedAt: new Date(Date.now() - i * 3600000).toISOString(),
-    }));
-    saveAll([...existing, ...samples]);
-    localStorage.setItem(SEED_KEY, new Date().toISOString());
+    // 公式テンプレートは一覧で直接提供する。既存の保存データを変更せず、架空の投稿を追加しない。
   },
 
   getDocuments(): PromptDocument[] {
@@ -40,7 +29,7 @@ export const store = {
   },
 
   getPublicDocuments(sort: "popular" | "recent" = "popular", category?: string): PromptDocument[] {
-    let docs = getAll().filter((d) => d.visibility === "public" && d.type !== "note");
+    let docs = getAll().filter((d) => d.visibility === "public" && d.type !== "note" && d.userId !== "sample" && !d.deletedAt);
     if (category && category !== "すべて") {
       docs = docs.filter((d) => d.tags.includes(category));
     }
@@ -106,8 +95,7 @@ export const store = {
     const docs = getAll();
     const index = docs.findIndex((d) => d.id === id);
     if (index === -1) return;
-    const { deletedAt, ...rest } = docs[index];
-    docs[index] = { ...rest, deletedAt: null } as PromptDocument;
+    docs[index] = { ...docs[index], deletedAt: null };
     saveAll(docs);
   },
 

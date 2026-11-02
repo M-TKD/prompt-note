@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-const FREE_MONTHLY_LIMIT = 10;
+import { runServerAIReview } from "@/lib/server-ai-review";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,19 +71,6 @@ async function recordUsage(userId: string): Promise<void> {
   }
 }
 
-// -----------------------------------------------
-// Extract user from Supabase auth header
-// -----------------------------------------------
-async function getUserId(req: NextRequest): Promise<string | null> {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
-
-  const token = authHeader.replace("Bearer ", "");
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !user) return null;
-  return user.id;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { bodyMd, provider, apiKey, accessToken } = await req.json();
@@ -102,54 +88,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Free tier with Groq (Llama 3.3 70B) → check monthly limit
+    // 自前キー以外のサーバー実行は、Groq・Anthropicとも共通ガードへ渡す。
     const groqKey = process.env.GROQ_API_KEY;
-    if (groqKey) {
-      // Get user ID from access token
-      let userId: string | null = null;
-      if (accessToken) {
-        const { data: { user } } = await supabaseAdmin.auth.getUser(accessToken);
-        userId = user?.id || null;
-      }
-
-      if (userId) {
-        // Check monthly usage
-        const usage = await getMonthlyUsage(userId);
-        if (usage >= FREE_MONTHLY_LIMIT) {
-          return NextResponse.json({
-            error: "free_limit_reached",
-            message: `今月の無料AI Review（${FREE_MONTHLY_LIMIT}回）を使い切りました。Settingsで自分のAPIキーを設定するか、Proプランにアップグレードしてください。`,
-            usage,
-            limit: FREE_MONTHLY_LIMIT,
-          }, { status: 429 });
-        }
-
-        // Call Groq and record usage
-        const result = await callGroq(groqKey, bodyMd);
-        if (result.status === 200) {
-          await recordUsage(userId);
-          // Add usage info to response
-          const data = await result.json();
-          return NextResponse.json({
-            ...data,
-            _usage: { used: usage + 1, limit: FREE_MONTHLY_LIMIT },
-          });
-        }
-        return result;
-      } else {
-        // Not logged in → demo response
-        return NextResponse.json(getDemoResponse());
-      }
-    }
-
-    // 3. Fallback: server-side Anthropic key
     const serverKey = process.env.ANTHROPIC_API_KEY;
-    if (serverKey) {
-      return await callAnthropic(serverKey, bodyMd);
-    }
-
-    // No key at all → demo response
-    return NextResponse.json(getDemoResponse());
+    return await runServerAIReview(bodyMd, accessToken, {
+      authenticate: async (token) => {
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+        return error ? null : user?.id || null;
+      },
+      getMonthlyUsage,
+      recordUsage,
+      reviewers: {
+        groq: groqKey ? (body) => callGroq(groqKey, body) : undefined,
+        anthropic: serverKey ? (body) => callAnthropic(serverKey, body) : undefined,
+      },
+    });
   } catch (error) {
     console.error("AI review error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -283,35 +236,4 @@ function parseAndReturn(text: string) {
   } catch {
     return NextResponse.json({ error: "AIの応答を解析できませんでした" }, { status: 502 });
   }
-}
-
-function getDemoResponse() {
-  return {
-    scores: {
-      clarity: { grade: "B", feedback: "意図は明確だが、もう少し具体化できる" },
-      specificity: { grade: "C", feedback: "具体的な条件や例が不足している" },
-      structure: { grade: "B", feedback: "基本的な構造はあるが改善の余地あり" },
-      context: { grade: "C", feedback: "背景情報を追加するとより良い" },
-      constraints: { grade: "D", feedback: "出力形式や制限を明示すべき" },
-    },
-    overall: "C",
-    suggestionMd: `# 改善版プロンプト
-
-## 役割
-あなたは[具体的な専門家の役割]です。
-
-## タスク
-以下の内容について[具体的なアクション]を行ってください。
-
-## 条件
-- 出力形式: [Markdown / 箇条書き / テーブル等]
-- 文字数: [目安の文字数]
-- トーン: [カジュアル / フォーマル等]
-
-## コンテキスト
-[背景情報や前提条件をここに記載]
-
----
-*ログインすると月${FREE_MONTHLY_LIMIT}回まで無料でAI Reviewが利用できます*`,
-  };
 }

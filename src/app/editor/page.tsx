@@ -1,5 +1,7 @@
 "use client";
 
+import { canSharePublicDocument, getSavedVisibility } from "@/lib/document-access";
+
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MarkdownPreview } from "@/components/MarkdownPreview";
@@ -9,14 +11,16 @@ import { useAuth } from "@/lib/auth-context";
 import { DocumentType, DocumentVisibility, DocumentVersion, TYPE_CONFIG, AI_APPS, extractVariables, fillTemplate } from "@/lib/types";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import {
-  ArrowLeft, Eye, Pencil, WandSparkles, Send, ArrowUpCircle,
-  Bold, Italic, Code, List, ListOrdered, Heading1, Heading2,
+  ArrowLeft, WandSparkles, Send, ArrowUpCircle,
+  Bold, Italic, Code, List, Heading1, Heading2,
   Quote, Minus, Link2, Copy, Check, Globe, Lock,
   ChevronRight, ThumbsUp, ThumbsDown, ExternalLink,
   Share2, Download, Variable, History, RotateCcw, FolderPlus,
 } from "lucide-react";
 import { CollectionSheet } from "@/components/CollectionSheet";
 import { ShareSheet } from "@/components/ShareSheet";
+import { copyPromptText } from "@/lib/official-templates";
+import { getApplicableSuggestion } from "@/lib/ai-review-result";
 
 function EditorContent() {
   const searchParams = useSearchParams();
@@ -48,7 +52,7 @@ function EditorContent() {
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
-  const [aiUsage, setAiUsage] = useState<{ used: number; limit: number } | null>(null);
+  const [, setAiUsage] = useState<{ used: number; limit: number } | null>(null);
 
   // Load existing doc or restore draft
   useEffect(() => {
@@ -119,7 +123,7 @@ function EditorContent() {
         title: title || null,
         bodyMd,
         type: docType,
-        visibility: isNote ? "private" as const : visibility,
+        visibility: getSavedVisibility(s.isCloud, isNote, visibility),
         tags,
       };
       if (editId) {
@@ -134,7 +138,7 @@ function EditorContent() {
       }
       setSaved(true);
       toast("保存しました");
-      setTimeout(() => router.push("/"), 500);
+      setTimeout(() => router.push("/notes"), 500);
     } catch {
       toast("エラーが発生しました", "error");
     } finally {
@@ -181,15 +185,15 @@ function EditorContent() {
     setTimeout(() => { textarea.focus(); textarea.selectionStart = textarea.selectionEnd = start + char.length; }, 0);
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(bodyMd);
+  const handleCopy = async () => {
+    if (!await copyPromptText(bodyMd, navigator.clipboard)) { toast("コピーできませんでした。本文を選択してコピーしてください", "error"); return; }
     setCopied(true);
     toast("コピーしました", "copy");
     setTimeout(() => setCopied(false), 1500);
   };
 
   const handleShare = () => {
-    if (visibility === "public" && editId) {
+    if (canSharePublicDocument(hybridStore.isCloud, visibility, editId)) {
       setShowShareSheet(true);
     } else {
       // Private: copy body text
@@ -209,43 +213,46 @@ function EditorContent() {
   };
 
   return (
-    <div className="flex flex-col h-dvh bg-white dark:bg-[#1a1a1a]">
+    <div className="flex flex-col h-[calc(100dvh-5.5rem)] bg-white dark:bg-[#1a1a1a]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] dark:border-[#333]">
-        <button onClick={() => router.back()} className="text-[#9ca3af] hover:text-[#1a1a1a] dark:hover:text-white">
+        <button aria-label="ノート一覧に戻る" onClick={() => router.push("/notes")} className="text-[#9ca3af] hover:text-[#1a1a1a] dark:hover:text-white">
           <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-[#d1d5db] font-mono tracking-wider uppercase">
-            {isQuickMemo ? "memo" : TYPE_CONFIG[docType].label}
+          <span className="hidden sm:inline text-[11px] text-[#d1d5db] font-mono tracking-wider uppercase">
+            {isQuickMemo ? "メモ" : TYPE_CONFIG[docType].label}
           </span>
           {draftRestored && (
-            <span className="text-[9px] text-[#4F46E5] font-mono">draft restored</span>
+            <span className="text-[9px] text-[#4F46E5] font-mono">下書きを復元しました</span>
           )}
           {/* View mode toggle (Edit / Split / Preview) */}
           <div className="flex items-center text-[10px] font-mono rounded bg-[#f5f5f5] dark:bg-[#222] p-0.5">
             <button
+              aria-pressed={viewMode === "edit"}
               onClick={() => setViewMode("edit")}
               className={`px-2 py-0.5 rounded ${viewMode === "edit" ? "bg-white dark:bg-[#333] text-[#1a1a1a] dark:text-white" : "text-[#9ca3af]"}`}
             >
-              Edit
+              編集
             </button>
             <button
+              aria-pressed={viewMode === "split"}
               onClick={() => setViewMode("split")}
               className={`hidden lg:inline-flex px-2 py-0.5 rounded ${viewMode === "split" ? "bg-white dark:bg-[#333] text-[#1a1a1a] dark:text-white" : "text-[#9ca3af]"}`}
             >
-              Split
+              並べて表示
             </button>
             <button
+              aria-pressed={viewMode === "preview"}
               onClick={() => setViewMode("preview")}
               className={`px-2 py-0.5 rounded ${viewMode === "preview" ? "bg-white dark:bg-[#333] text-[#1a1a1a] dark:text-white" : "text-[#9ca3af]"}`}
             >
-              Preview
+              プレビュー
             </button>
           </div>
           {hasContent && (
-            <button onClick={() => setShowAIReview(true)} className="text-[10px] px-1.5 py-0.5 rounded font-mono text-[#6b7280] hover:text-[#4F46E5]">
-              AI
+            <button aria-label="AIでプロンプトを評価" onClick={() => setShowAIReview(true)} className="text-[10px] px-1.5 py-0.5 rounded font-mono text-[#6b7280] hover:text-[#4F46E5]">
+              AI評価
             </button>
           )}
         </div>
@@ -256,12 +263,12 @@ function EditorContent() {
             hasContent ? "bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a]" : "bg-[#f5f5f5] dark:bg-[#333] text-[#d1d5db]"
           }`}
         >
-          {saved ? "✓" : "Save"}
+          {saved ? "保存済み" : "保存"}
         </button>
       </div>
 
       {/* Type & Visibility & Promote */}
-      <div className="px-4 py-2 flex items-center gap-2 border-b border-[#f0f0f0] dark:border-[#333]">
+      <div className="px-4 py-2 flex flex-wrap items-center gap-2 border-b border-[#f0f0f0] dark:border-[#333]">
         <span className={`text-[10px] px-2 py-0.5 rounded font-mono tracking-wide ${
           isNote ? "bg-[#f5f5f5] dark:bg-[#333] text-[#9ca3af]" :
           isPrompt ? "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]" : "bg-[#f5f5f5] dark:bg-[#333] text-[#6b7280]"
@@ -270,13 +277,15 @@ function EditorContent() {
         </span>
         {!isNote && (
           <button
+            disabled={!hybridStore.isCloud}
+            title={!hybridStore.isCloud ? "公開するにはログインしてクラウドへ保存してください" : undefined}
             onClick={() => setVisibility(visibility === "public" ? "private" : "public")}
             className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-mono ${
               visibility === "public" ? "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]" : "bg-[#f5f5f5] dark:bg-[#333] text-[#9ca3af]"
             }`}
           >
             {visibility === "public" ? <Globe className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
-            {visibility === "public" ? "public" : "private"}
+            {!hybridStore.isCloud ? "端末内のみ・公開にはログイン" : visibility === "public" ? "公開" : "非公開"}
           </button>
         )}
         {/* Variable count badge */}
@@ -286,7 +295,7 @@ function EditorContent() {
             className="text-[10px] px-2 py-0.5 rounded bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5] flex items-center gap-1 font-mono"
           >
             <Variable className="w-2.5 h-2.5" />
-            {variables.length} vars
+            変数 {variables.length}個
           </button>
         )}
 
@@ -299,7 +308,7 @@ function EditorContent() {
             className="text-[11px] flex items-center gap-1.5 bg-[#4F46E5] text-white px-3 py-1 rounded-full font-medium"
           >
             <ArrowUpCircle className="w-3 h-3" />
-            Boost
+            AI用に整える
           </button>
         )}
         {/* Send to AI — prominent position */}
@@ -310,7 +319,7 @@ function EditorContent() {
               className="text-[11px] flex items-center gap-1.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] px-3 py-1 rounded-full font-medium"
             >
               <Send className="w-3 h-3" />
-              Send to AI
+              AIで使う
             </button>
             <button
               onClick={() => {
@@ -340,7 +349,8 @@ function EditorContent() {
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder={isQuickMemo ? "Title（任意）" : "Title"}
+        aria-label="タイトル"
+        placeholder="タイトル（任意）"
         className="px-6 py-3 text-lg font-bold outline-none placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] tracking-tight text-[#1a1a1a] dark:text-white bg-transparent"
       />
 
@@ -349,7 +359,7 @@ function EditorContent() {
         {tags.map((tag) => (
           <span key={tag} className="text-[10px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#f5f5f5] dark:bg-[#333] flex items-center gap-1 font-mono">
             #{tag}
-            <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="text-[#d1d5db] hover:text-[#6b7280]">✕</button>
+            <button aria-label={`${tag}タグを削除`} onClick={() => setTags(tags.filter((t) => t !== tag))} className="text-[#d1d5db] hover:text-[#6b7280]">✕</button>
           </span>
         ))}
         <input
@@ -357,7 +367,8 @@ function EditorContent() {
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); handleAddTag(); } }}
-          placeholder="tag..."
+          aria-label="タグを追加"
+          placeholder="タグを追加..."
           className="text-[10px] outline-none min-w-[60px] flex-1 text-[#9ca3af] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent font-mono"
         />
       </div>
@@ -376,7 +387,8 @@ function EditorContent() {
               ref={textareaRef}
               value={bodyMd}
               onChange={(e) => setBodyMd(e.target.value)}
-              placeholder={isQuickMemo ? "Write something..." : "Write in Markdown...\n\nUse {{variable}} for template variables"}
+              aria-label="ノートの本文"
+              placeholder={isQuickMemo ? "メモを書いてください..." : "AIへの指示を書いてください...\n\n{{変数名}} を使うと、繰り返し使えるテンプレートになります"}
               className="w-full h-full p-6 outline-none resize-none font-mono text-sm leading-relaxed text-[#404040] dark:text-[#e5e7eb] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent"
               autoFocus
             />
@@ -403,6 +415,7 @@ function EditorContent() {
             {["#", "*", "_", "+", "-", "`", "<", ">", "!", "[", "]", "(", ")", "|", "~", "{{"].map((char) => (
               <button
                 key={char}
+                aria-label={`${char}を挿入`}
                 onClick={() => char === "{{" ? insertMarkdown("{{", "}}") : insertChar(char)}
                 className="min-w-[34px] h-9 flex items-center justify-center text-[14px] font-mono text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white active:bg-[#f0f0f0] dark:active:bg-[#333] rounded"
               >
@@ -416,17 +429,17 @@ function EditorContent() {
           {viewMode !== "preview" && (
             <>
               {[
-                { icon: <Heading1 className="w-3.5 h-3.5" />, action: () => insertMarkdown("# ") },
-                { icon: <Heading2 className="w-3.5 h-3.5" />, action: () => insertMarkdown("## ") },
-                { icon: <Bold className="w-3.5 h-3.5" />, action: () => insertMarkdown("**", "**") },
-                { icon: <Italic className="w-3.5 h-3.5" />, action: () => insertMarkdown("_", "_") },
-                { icon: <Code className="w-3.5 h-3.5" />, action: () => insertMarkdown("```\n", "\n```") },
-                { icon: <List className="w-3.5 h-3.5" />, action: () => insertMarkdown("- ") },
-                { icon: <Quote className="w-3.5 h-3.5" />, action: () => insertMarkdown("> ") },
-                { icon: <Link2 className="w-3.5 h-3.5" />, action: () => insertMarkdown("[", "](URL)") },
-                { icon: <Minus className="w-3.5 h-3.5" />, action: () => insertMarkdown("\n---\n") },
+                { label: "見出し1を挿入", icon: <Heading1 className="w-3.5 h-3.5" />, action: () => insertMarkdown("# ") },
+                { label: "見出し2を挿入", icon: <Heading2 className="w-3.5 h-3.5" />, action: () => insertMarkdown("## ") },
+                { label: "太字にする", icon: <Bold className="w-3.5 h-3.5" />, action: () => insertMarkdown("**", "**") },
+                { label: "斜体にする", icon: <Italic className="w-3.5 h-3.5" />, action: () => insertMarkdown("_", "_") },
+                { label: "コードブロックを挿入", icon: <Code className="w-3.5 h-3.5" />, action: () => insertMarkdown("```\n", "\n```") },
+                { label: "箇条書きを挿入", icon: <List className="w-3.5 h-3.5" />, action: () => insertMarkdown("- ") },
+                { label: "引用を挿入", icon: <Quote className="w-3.5 h-3.5" />, action: () => insertMarkdown("> ") },
+                { label: "リンクを挿入", icon: <Link2 className="w-3.5 h-3.5" />, action: () => insertMarkdown("[", "](URL)") },
+                { label: "区切り線を挿入", icon: <Minus className="w-3.5 h-3.5" />, action: () => insertMarkdown("\n---\n") },
               ].map((btn, i) => (
-                <button key={i} onClick={btn.action} className="p-2 text-[#9ca3af] dark:text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+                <button key={i} aria-label={btn.label} title={btn.label} onClick={btn.action} className="p-2 text-[#9ca3af] dark:text-[#6b7280] hover:text-[#1a1a1a] dark:hover:text-white active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
                   {btn.icon}
                 </button>
               ))}
@@ -436,27 +449,27 @@ function EditorContent() {
           )}
           {/* Actions */}
           {hasContent && (
-            <button onClick={handleCopy} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+            <button aria-label="本文をコピー" onClick={handleCopy} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
               {copied ? <Check className="w-3.5 h-3.5 text-[#4F46E5]" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           )}
           {hasContent && (
-            <button onClick={handleShare} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+            <button aria-label="共有する" onClick={handleShare} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
               <Share2 className="w-3.5 h-3.5" />
             </button>
           )}
           {hasContent && (
-            <button onClick={handleExport} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+            <button aria-label="Markdownファイルで保存" onClick={handleExport} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
               <Download className="w-3.5 h-3.5" />
             </button>
           )}
           {hasContent && editId && (
-            <button onClick={() => setShowCollectionSheet(true)} className="p-2 text-[#9ca3af] hover:text-[#4F46E5] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+            <button aria-label="コレクションに追加" onClick={() => setShowCollectionSheet(true)} className="p-2 text-[#9ca3af] hover:text-[#4F46E5] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
               <FolderPlus className="w-3.5 h-3.5" />
             </button>
           )}
           {editId && storeRef.current.isCloud && (
-            <button onClick={() => setShowVersionHistory(true)} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
+            <button aria-label="変更履歴を見る" onClick={() => setShowVersionHistory(true)} className="p-2 text-[#9ca3af] hover:text-[#6b7280] active:bg-[#f0f0f0] dark:active:bg-[#333] rounded">
               <History className="w-3.5 h-3.5" />
             </button>
           )}
@@ -512,8 +525,8 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
     <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
       <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 space-y-3 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
         <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
-        <h2 className="font-bold text-base text-center tracking-tight dark:text-white">Template Variables</h2>
-        <p className="text-[11px] text-[#9ca3af] text-center font-mono">Fill in values to generate prompt</p>
+        <h2 className="font-bold text-base text-center tracking-tight dark:text-white">テンプレートの変数</h2>
+        <p className="text-[11px] text-[#9ca3af] text-center font-mono">変数を埋めて、自分の仕事に合わせてください</p>
 
         <div className="space-y-3 mt-4">
           {vars.map((v) => (
@@ -532,23 +545,22 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
 
         <div className="flex gap-2 pt-2">
           <button
-            onClick={() => {
-              const filled = fillTemplate(bodyMd, values);
-              navigator.clipboard.writeText(filled);
-              toast("コピーしました", "copy");
+            onClick={async () => {
+              const success = await copyPromptText(fillTemplate(bodyMd, values), navigator.clipboard);
+              toast(success ? "コピーしました" : "コピーできませんでした。本文を選択してコピーしてください", success ? "copy" : "error");
             }}
             className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs"
           >
-            Copy filled
+            変数を埋めてコピー
           </button>
           <button
             onClick={() => onFill(fillTemplate(bodyMd, values))}
             className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-xs"
           >
-            Apply
+            本文に適用
           </button>
         </div>
-        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-1">Cancel</button>
+        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-1">閉じる</button>
       </div>
     </div>
   );
@@ -577,7 +589,7 @@ function PromoteSheet({ onPromote, onSendToAI, onClose }: { onPromote: (t: Docum
             <Send className="w-4 h-4" /> Boost & Send to AI
           </button>
         </div>
-        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-1">Cancel</button>
+        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-1">閉じる</button>
       </div>
     </div>
   );
@@ -597,15 +609,16 @@ const AI_LOGOS: Record<string, React.ReactNode> = {
 function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: () => void }) {
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const handleSend = (app: typeof AI_APPS[number]) => {
-    navigator.clipboard.writeText(promptText);
-    window.open(app.webUrl, "_blank");
+  const handleSend = async (app: typeof AI_APPS[number]) => {
+    // ポップアップのブロックを避けて先に開き、コピー結果を確かめてから案内する。
+    window.open(app.webUrl, "_blank", "noopener,noreferrer");
+    if (!await copyPromptText(promptText, navigator.clipboard)) { toast("コピーできませんでした。元の本文を選択してコピーしてください", "error"); return; }
     setCopiedId(app.id);
     toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 2000);
   };
-  const handleCopyOnly = () => {
-    navigator.clipboard.writeText(promptText);
+  const handleCopyOnly = async () => {
+    if (!await copyPromptText(promptText, navigator.clipboard)) { toast("コピーできませんでした。元の本文を選択してコピーしてください", "error"); return; }
     setCopiedId("clipboard");
     toast("コピーしました", "copy");
     setTimeout(() => setCopiedId(null), 2000);
@@ -615,7 +628,8 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
     <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
       <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 space-y-2 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
         <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
-        <h2 className="font-bold text-base text-center tracking-tight dark:text-white">Send to AI</h2>
+        <h2 className="font-bold text-base text-center tracking-tight dark:text-white">コピーしてAIで使う</h2>
+        <p className="text-xs text-[#6b7280] dark:text-[#aaa]">AIを開いたら、コピーした本文を入力欄に貼り付けてください。</p>
         <div className="bg-[#fafafa] dark:bg-[#222] p-3 rounded-lg mb-2 border border-[#f0f0f0] dark:border-[#333]">
           <p className="text-[10px] text-[#9ca3af] mb-1 font-mono uppercase tracking-wider">Prompt</p>
           <p className="text-sm text-[#404040] dark:text-[#e5e7eb] line-clamp-3 leading-relaxed">{promptText}</p>
@@ -624,7 +638,7 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
           {AI_APPS.map((app) => (
             <button key={app.id} onClick={() => handleSend(app)} className="w-full flex items-center gap-3 p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444]">
               <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#fafafa] dark:bg-[#222]">{AI_LOGOS[app.id] || app.icon}</span>
-              <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">{app.name}</p><p className="text-[10px] text-[#9ca3af] font-mono">Copy & open</p></div>
+              <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">{app.name}</p><p className="text-[10px] text-[#9ca3af] font-mono">コピーして開く（貼り付けが必要）</p></div>
               {copiedId === app.id ? <Check className="w-4 h-4 text-[#4F46E5]" /> : <ExternalLink className="w-4 h-4 text-[#d1d5db]" />}
             </button>
           ))}
@@ -632,11 +646,11 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
         <div className="border-t border-[#f0f0f0] dark:border-[#333] pt-2">
           <button onClick={handleCopyOnly} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#fafafa] dark:hover:bg-[#222]">
             <span className="w-8 h-8 flex items-center justify-center bg-[#f5f5f5] dark:bg-[#333] rounded-lg"><Copy className="w-4 h-4 text-[#6b7280]" /></span>
-            <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">Copy only</p><p className="text-[10px] text-[#9ca3af] font-mono">To clipboard</p></div>
+            <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">本文をコピー</p><p className="text-[10px] text-[#9ca3af] font-mono">クリップボードにコピーします</p></div>
             {copiedId === "clipboard" ? <Check className="w-4 h-4 text-[#4F46E5]" /> : null}
           </button>
         </div>
-        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-1">Close</button>
+        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-1">閉じる</button>
       </div>
     </div>
   );
@@ -653,6 +667,7 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
   const [errorMsg, setErrorMsg] = useState("");
   const [usage, setUsage] = useState<{ used: number; limit: number } | null>(null);
   const [isLimitReached, setIsLimitReached] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
 
   const hasOwnKey = typeof window !== "undefined" && !!localStorage.getItem("promptnote_ai_apikey");
 
@@ -688,10 +703,12 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
       }
 
       const data = await res.json();
+      // 固定の見本を実分析と区別し、使用回数や編集本文へ反映させない。
+      setIsDemo(data._demo === true);
       setScores(data.scores);
       setOverall(data.overall);
       setSuggestion(data.suggestionMd);
-      if (data._usage) {
+      if (!data._demo && data._usage) {
         setUsage(data._usage);
         onUsageUpdate?.(data._usage);
       }
@@ -706,10 +723,13 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
   const axisLabels: Record<string, string> = { clarity: "Clarity", specificity: "Specificity", structure: "Structure", context: "Context", constraints: "Constraints" };
 
   return (
-    <div className="fixed inset-0 bg-black/20 z-50 flex items-end justify-center" onClick={onClose}>
-      <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/20 z-[100] flex items-end justify-center" onClick={onClose}>
+      <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl px-6 pb-6 max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 bg-white dark:bg-[#1a1a1a] py-3 flex justify-end">
+          <button type="button" onClick={onClose} aria-label="AI評価を閉じる" className="px-3 py-2 rounded-lg text-sm text-[#404040] dark:text-[#e5e7eb] border border-[#d1d5db] dark:border-[#555]">閉じる</button>
+        </div>
         <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-3" />
-        <h2 className="font-bold text-base text-center tracking-tight mb-4 dark:text-white">AI Review</h2>
+        <h2 className="font-bold text-base text-center tracking-tight mb-4 dark:text-white">AI評価</h2>
         {state === "idle" && (
           <div className="space-y-4">
             <p className="text-xs text-[#9ca3af] text-center font-mono">5つの軸でプロンプトを評価</p>
@@ -720,11 +740,11 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
             </div>
             {!hasOwnKey && (
               <p className="text-[10px] text-[#9ca3af] text-center">
-                月10回まで無料 {usage ? `（${usage.used}/${usage.limit} 使用済み）` : ""}
+                {session ? "月10回まで無料" : "ログインしていない間は固定の見本を表示します。自分のAPIキーを設定した場合は、そのAIで評価します。"} {usage ? `（${usage.used}/${usage.limit} 使用済み）` : ""}
               </p>
             )}
             <button onClick={runReview} className="w-full py-3 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-sm flex items-center justify-center gap-2">
-              <WandSparkles className="w-4 h-4" /> {hasOwnKey ? "Run Review" : "無料でReview"}
+              <WandSparkles className="w-4 h-4" /> {hasOwnKey || session ? "AIで評価する" : "結果の見本を見る"}
             </button>
           </div>
         )}
@@ -733,6 +753,11 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
         )}
         {state === "done" && (
           <div className="space-y-4">
+            {isDemo && <div role="status" className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-950 text-sm">
+              <p className="font-bold">これはAI評価の見本です</p>
+              <p className="mt-1">入力した本文は分析していません。点数と改善案は固定の表示例で、本文への適用・保存はできません。</p>
+              <p className="mt-2">実際の評価には<a href="/auth" className="underline">ログイン</a>、または<a href="/settings" className="underline">自分のAPIキーの設定</a>が必要です。利用可能なAI接続がない場合も見本になります。</p>
+            </div>}
             <div className="text-center py-4"><p className="text-[10px] text-[#9ca3af] mb-1 font-mono uppercase tracking-wider">Overall</p><p className={`text-4xl font-bold ${gradeColor[overall] || ""}`}>{overall}</p></div>
             <div className="space-y-2">
               {Object.entries(scores).map(([key, val]) => (
@@ -743,18 +768,24 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
               <p className="font-medium text-xs mb-2 text-[#4F46E5] font-mono uppercase tracking-wider">Improved</p>
               <div className="markdown-preview text-sm"><MarkdownPreview content={suggestion} /></div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => { navigator.clipboard.writeText(suggestion); toast("コピーしました", "copy"); }} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs">Copy</button>
-              <button onClick={() => onApply(suggestion)} className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-xs">Apply</button>
-            </div>
+            {!isDemo && <div className="flex gap-2">
+              <button onClick={async () => {
+                const success = await copyPromptText(suggestion, navigator.clipboard);
+                toast(success ? "コピーしました" : "コピーできませんでした。改善案を選択してコピーしてください", success ? "copy" : "error");
+              }} className="flex-1 py-2.5 border border-[#f0f0f0] dark:border-[#333] text-[#6b7280] font-medium rounded-xl text-xs">コピー</button>
+              <button onClick={() => {
+                const applicable = getApplicableSuggestion({ _demo: isDemo, suggestionMd: suggestion });
+                if (applicable) onApply(applicable);
+              }} className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-xs">本文に適用</button>
+            </div>}
             {usage && !hasOwnKey && (
               <p className="text-[10px] text-[#9ca3af] text-center font-mono">今月 {usage.used}/{usage.limit} 回使用</p>
             )}
-            <div className="flex items-center justify-center gap-4 text-[11px] text-[#d1d5db]">
+            {!isDemo && <div className="flex items-center justify-center gap-4 text-[11px] text-[#d1d5db]">
               <span className="font-mono">Helpful?</span>
               <button className="p-2 hover:text-[#1a1a1a] dark:hover:text-white"><ThumbsUp className="w-3.5 h-3.5" /></button>
               <button className="p-2 hover:text-[#1a1a1a] dark:hover:text-white"><ThumbsDown className="w-3.5 h-3.5" /></button>
-            </div>
+            </div>}
           </div>
         )}
         {state === "error" && (
@@ -770,7 +801,7 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
             {!isLimitReached && <button onClick={runReview} className="text-[#4F46E5] text-xs font-medium">Retry</button>}
           </div>
         )}
-        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">Close</button>
+        <button onClick={onClose} className="w-full text-center text-[11px] text-[#d1d5db] py-2 mt-2">閉じる</button>
       </div>
     </div>
   );
