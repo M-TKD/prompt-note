@@ -213,7 +213,8 @@ function EditorContent() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-5.5rem)] bg-white dark:bg-[#1a1a1a]">
+    // 共通の戻るナビの高さも除き、下部メニューと編集操作が重ならないようにする。
+    <div className="flex flex-col h-[calc(100dvh-5.5rem-var(--pn-brand-nav-height))] bg-white dark:bg-[#1a1a1a]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] dark:border-[#333]">
         <button aria-label="ノート一覧に戻る" onClick={() => router.push("/notes")} className="text-[#9ca3af] hover:text-[#1a1a1a] dark:hover:text-white">

@@ -221,7 +221,7 @@ export default function LandingPage() {
 
       <footer className="pn-footer">
         <div className="pn-container">
-          <div className="pn-footer-top"><Link href="/" className="pn-logo" aria-label="Prompt Notes ホーム"><Image src="/logo-horizontal.png" alt="Prompt Notes" width={1385} height={353} sizes="176px" /></Link><a href="https://craftbaseapp.com/" className="pn-text-link">Craftbaseの仕事道具を見る</a></div>
+          <div className="pn-footer-top"><Link href="/" className="pn-logo" aria-label="Prompt Notes ホーム"><Image src="/logo-horizontal.png" alt="Prompt Notes" width={1385} height={353} sizes="176px" /></Link><a href="https://craftbaseapp.com/" className="pn-text-link">Craftbaseトップへ戻る</a></div>
           <div className="pn-footer-bottom"><p>運営：合同会社WonderPlace</p><nav aria-label="フッターナビゲーション"><Link href="/terms">利用規約</Link><Link href="/privacy">プライバシーポリシー</Link><Link href="/howto">使い方</Link></nav><p>© 2026 Prompt Notes</p></div>
         </div>
       </footer>
