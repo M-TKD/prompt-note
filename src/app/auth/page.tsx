@@ -61,7 +61,7 @@ function AuthForm() {
           </div>
           <h1 className="text-xl font-bold tracking-tight text-[#1a1a1a] dark:text-white mb-2">メールを確認してください</h1>
           <p className="text-sm text-[#9ca3af] mb-6 leading-relaxed">
-            <span className="font-mono text-[#6b7280]">{email}</span> に確認メールを送信しました。
+            <span className="font-sans text-[#6b7280]">{email}</span> に確認メールを送信しました。
           </p>
           <button onClick={() => { setSuccess(false); setMode("signin"); }} className="text-[#4F46E5] text-sm font-medium">
             ログイン画面へ →
@@ -86,7 +86,7 @@ function AuthForm() {
           <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">
             {mode === "signin" ? "ログイン" : "無料アカウントを作成"}
           </h1>
-          <p className="text-xs text-[#9ca3af] mt-1 font-mono">
+          <p className="text-xs text-[#9ca3af] mt-1 font-sans">
             {mode === "signin" ? "保存したノートを同期して、続きから使う" : "端末内のノートをアカウントへ移し、他の端末でも使う"}
           </p>
         </div>
@@ -130,14 +130,14 @@ function AuthForm() {
         {/* メール認証との区切り */}
         <div className="flex items-center gap-3 mb-6">
           <div className="flex-1 h-px bg-[#f0f0f0] dark:bg-[#333]" />
-          <span className="text-[10px] text-[#d1d5db] font-mono uppercase tracking-widest">またはメールで</span>
+          <span className="text-[10px] text-[#d1d5db] font-sans uppercase tracking-widest">またはメールで</span>
           <div className="flex-1 h-px bg-[#f0f0f0] dark:bg-[#333]" />
         </div>
 
         {/* メールとパスワードで認証 */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-1.5 block" htmlFor="auth-email">メールアドレス</label>
+            <label className="text-[10px] font-sans text-[#9ca3af] uppercase tracking-widest mb-1.5 block" htmlFor="auth-email">メールアドレス</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#d1d5db]" />
               <input
@@ -154,7 +154,7 @@ function AuthForm() {
           </div>
 
           <div>
-            <label className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-1.5 block" htmlFor="auth-password">パスワード</label>
+            <label className="text-[10px] font-sans text-[#9ca3af] uppercase tracking-widest mb-1.5 block" htmlFor="auth-password">パスワード</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#d1d5db]" />
               <input

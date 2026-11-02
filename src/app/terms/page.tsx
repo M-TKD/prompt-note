@@ -18,7 +18,7 @@ export default function TermsPage() {
 
       {/* Content */}
       <div className="max-w-lg mx-auto px-6 text-sm leading-relaxed text-[#404040] dark:text-[#9ca3af]">
-        <p className="text-[10px] font-mono text-[#9ca3af] mb-6">最終更新日: 2026年3月23日</p>
+        <p className="text-[10px] font-sans text-[#9ca3af] mb-6">最終更新日: 2026年3月23日</p>
 
         <p className="mb-4">
           本利用規約（以下「本規約」）は、PromptNotes（以下「本サービス」）の利用条件を定めるものです。本サービスをご利用いただく前に、本規約をよくお読みください。本サービスを利用することで、本規約に同意したものとみなされます。

@@ -85,7 +85,7 @@ export default function HowToPage() {
 
       {/* 保存と再利用の考え方 */}
       <section className="mb-12">
-        <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">保存して、また使う</p>
+        <p className="text-[10px] font-sans text-[#9ca3af] uppercase tracking-widest mb-4">保存して、また使う</p>
         <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-xl p-5">
           <p className="text-sm text-[#404040] dark:text-[#e5e7eb] leading-relaxed mb-4">
             Prompt Notesは、AIへの指示を保存して再利用するノートです。
@@ -107,7 +107,7 @@ export default function HowToPage() {
 
       {/* メモの種類 */}
       <section className="mb-12">
-        <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">3つの種類</p>
+        <p className="text-[10px] font-sans text-[#9ca3af] uppercase tracking-widest mb-4">3つの種類</p>
         <div className="space-y-2">
           {CONCEPTS.map((c) => (
             <div key={c.title} className="flex items-start gap-3 py-3 border-b border-[#f0f0f0] dark:border-[#333] last:border-0">
@@ -123,7 +123,7 @@ export default function HowToPage() {
 
       {/* 基本の手順 */}
       <section className="mb-12">
-        <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-6">基本の手順</p>
+        <p className="text-[10px] font-sans text-[#9ca3af] uppercase tracking-widest mb-6">基本の手順</p>
         <div className="space-y-0">
           {STEPS.map((step, i) => (
             <div key={step.number} className="flex gap-4 pb-8 last:pb-0">
@@ -136,7 +136,7 @@ export default function HowToPage() {
                 {i < STEPS.length - 1 && <div className="w-px flex-1 bg-[#f0f0f0] dark:bg-[#333] mt-2" />}
               </div>
               <div className="pt-1">
-                <p className="text-[10px] font-mono text-[#d1d5db] mb-0.5">{step.number}</p>
+                <p className="text-[10px] font-sans text-[#d1d5db] mb-0.5">{step.number}</p>
                 <p className="font-medium text-sm text-[#1a1a1a] dark:text-white mb-1">{step.title}</p>
                 <p className="text-sm text-[#6b7280] dark:text-[#b5b5c2] leading-relaxed">{step.description}</p>
               </div>
@@ -147,7 +147,7 @@ export default function HowToPage() {
 
       {/* 補助機能 */}
       <section className="mb-12">
-        <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">ほかにできること</p>
+        <p className="text-[10px] font-sans text-[#9ca3af] uppercase tracking-widest mb-4">ほかにできること</p>
         <div className="grid grid-cols-2 gap-2">
           {FEATURES.map((f) => (
             <div key={f.title} className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-3">
@@ -163,7 +163,7 @@ export default function HowToPage() {
 
       {/* 保存先と利用条件 */}
       <section className="mb-8">
-        <p className="text-[10px] font-mono text-[#9ca3af] uppercase tracking-widest mb-4">覚えておきたいこと</p>
+        <p className="text-[10px] font-sans text-[#9ca3af] uppercase tracking-widest mb-4">覚えておきたいこと</p>
         <div className="space-y-3">
           <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4">
             <p className="text-sm text-[#6b7280] dark:text-[#b5b5c2] leading-relaxed">

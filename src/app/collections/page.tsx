@@ -195,7 +195,7 @@ function CollectionsContent() {
                 {activeCollection.emoji && <span className="mr-1.5">{activeCollection.emoji}</span>}
                 {activeCollection.name}
               </h1>
-              <p className="text-xs text-[#9ca3af] font-mono mt-0.5">
+              <p className="text-xs text-[#9ca3af] font-sans mt-0.5">
                 {collectionDocs.length} items
               </p>
             </div>
@@ -225,7 +225,7 @@ function CollectionsContent() {
                     <div className={`w-0.5 h-8 rounded-full mt-1 shrink-0 ${doc.type === "note" ? "bg-[#e5e7eb]" : doc.type === "prompt" ? "bg-[#4F46E5]" : "bg-[#9ca3af]"}`} />
                     <Link href={`/editor?id=${doc.id}`} className="flex-1 min-w-0">
                       <p className="font-medium text-sm text-[#1a1a1a] dark:text-white truncate">{displayTitle}</p>
-                      <span className="text-[10px] text-[#9ca3af] font-mono mt-1">{config.label}</span>
+                      <span className="text-[10px] text-[#9ca3af] font-sans mt-1">{config.label}</span>
                     </Link>
                     <button
                       onClick={() => handleRemoveFromCollection(doc.id)}
@@ -369,7 +369,7 @@ function CollectionsContent() {
                         <p className="text-sm font-medium text-[#1a1a1a] dark:text-white truncate">
                           {col.name}
                         </p>
-                        <p className="text-[10px] text-[#9ca3af] font-mono mt-0.5">
+                        <p className="text-[10px] text-[#9ca3af] font-sans mt-0.5">
                           {col.documentCount || 0} items
                         </p>
                       </div>

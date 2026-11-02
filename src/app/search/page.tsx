@@ -67,19 +67,19 @@ export default function SearchPage() {
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search..."
-          className="w-full pl-9 pr-4 py-2.5 bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg text-sm outline-none focus:border-[#d1d5db] dark:focus:border-[#444] placeholder:text-[#d1d5db] dark:placeholder:text-[#444] dark:text-white font-mono"
+          className="w-full pl-9 pr-4 py-2.5 bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg text-sm outline-none focus:border-[#d1d5db] dark:focus:border-[#444] placeholder:text-[#d1d5db] dark:placeholder:text-[#444] dark:text-white font-sans"
         />
       </div>
 
       {!searched ? (
         <div>
-          <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">Popular tags</h2>
+          <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">Popular tags</h2>
           <div className="flex flex-wrap gap-2">
             {POPULAR_TAGS.map((tag) => (
               <button
                 key={tag}
                 onClick={() => handleTagClick(tag)}
-                className="px-2.5 py-1 text-[11px] text-[#9ca3af] rounded border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444] hover:text-[#6b7280] font-mono"
+                className="px-2.5 py-1 text-[11px] text-[#9ca3af] rounded border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444] hover:text-[#6b7280] font-sans"
               >
                 #{tag}
               </button>
@@ -88,11 +88,11 @@ export default function SearchPage() {
         </div>
       ) : loading ? (
         <div className="text-center py-24">
-          <p className="text-[#9ca3af] text-xs font-mono">Searching...</p>
+          <p className="text-[#9ca3af] text-xs font-sans">Searching...</p>
         </div>
       ) : results.length === 0 ? (
         <div className="text-center py-24">
-          <p className="text-[#9ca3af] text-xs font-mono">No results for &ldquo;{query}&rdquo;</p>
+          <p className="text-[#9ca3af] text-xs font-sans">No results for &ldquo;{query}&rdquo;</p>
         </div>
       ) : (
         <div>
@@ -114,7 +114,7 @@ export default function SearchPage() {
                 {doc.tags.length > 0 && (
                   <div className="flex gap-1.5 mt-1">
                     {doc.tags.slice(0, 3).map((t) => (
-                      <span key={t} className="text-[10px] text-[#d1d5db] font-mono">#{t}</span>
+                      <span key={t} className="text-[10px] text-[#d1d5db] font-sans">#{t}</span>
                     ))}
                   </div>
                 )}

@@ -18,7 +18,7 @@ export default function PrivacyPage() {
 
       {/* Content */}
       <div className="max-w-lg mx-auto px-6 text-sm leading-relaxed text-[#404040] dark:text-[#9ca3af]">
-        <p className="text-[10px] font-mono text-[#9ca3af] mb-6">最終更新日: 2026年3月23日</p>
+        <p className="text-[10px] font-sans text-[#9ca3af] mb-6">最終更新日: 2026年3月23日</p>
 
         <p className="mb-4">
           本プライバシーポリシー（以下「本ポリシー」）は、PromptNotes（以下「本サービス」）におけるユーザー情報の取り扱いについて説明するものです。

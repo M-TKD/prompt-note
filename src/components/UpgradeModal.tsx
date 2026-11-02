@@ -52,13 +52,13 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
         </button>
 
         <div className="text-center space-y-1 pt-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#4F46E5] text-white text-[10px] font-bold font-mono uppercase tracking-widest mb-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#4F46E5] text-white text-[10px] font-bold font-sans uppercase tracking-widest mb-2">
             Pro
           </div>
           <h2 className="font-bold text-lg tracking-tight text-[#1a1a1a] dark:text-white">
             Proプランにアップグレード
           </h2>
-          <p className="text-xs text-[#9ca3af] font-mono">すべての機能を制限なく利用</p>
+          <p className="text-xs text-[#9ca3af] font-sans">すべての機能を制限なく利用</p>
         </div>
 
         <div className="space-y-2.5">

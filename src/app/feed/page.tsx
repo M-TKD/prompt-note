@@ -169,7 +169,7 @@ function FeedContent() {
     <div className="px-4 pt-14 md:w-screen md:relative md:left-1/2 md:-translate-x-1/2 md:px-10 lg:px-16">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">テンプレートを探す</h1>
-        <p className="text-xs text-[#9ca3af] mt-1 font-mono">公式テンプレートと公開プロンプト。自分のノートに保存して使えます。</p>
+        <p className="text-xs text-[#9ca3af] mt-1 font-sans">公式テンプレートと公開プロンプト。自分のノートに保存して使えます。</p>
       </div>
 
       {/* Search */}
@@ -239,7 +239,7 @@ function FeedContent() {
               }`}
             >
               {cat}
-              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-sans ${
                 category === cat
                   ? "bg-white/20 text-white dark:bg-black/20 dark:text-[#1a1a1a]"
                   : "bg-[#e5e7eb] dark:bg-[#333] text-[#9ca3af]"
@@ -260,7 +260,7 @@ function FeedContent() {
           <button
             key={s.key}
             onClick={() => setSort(s.key)}
-            className={`pb-2 font-mono tracking-wide ${
+            className={`pb-2 font-sans tracking-wide ${
               sort === s.key ? "text-[#1a1a1a] dark:text-white border-b-2 border-[#1a1a1a] dark:border-white" : "text-[#d1d5db] dark:text-[#6b7280]"
             }`}
           >
@@ -277,7 +277,7 @@ function FeedContent() {
       ) : filteredDocs.length === 0 ? (
         <div className="text-center py-28">
           <p className="text-[#d1d5db] text-sm">{searchQuery ? "検索結果がありません" : "公開されたプロンプトはまだありません"}</p>
-          <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-mono">{searchQuery ? `"${searchQuery}" に一致するプロンプトが見つかりません` : "公式テンプレートや自分のノートから始めてみてください"}</p>
+          <p className="text-[#e5e7eb] dark:text-[#444] text-xs mt-1.5 font-sans">{searchQuery ? `"${searchQuery}" に一致するプロンプトが見つかりません` : "公式テンプレートや自分のノートから始めてみてください"}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 md:gap-4 pb-24">
@@ -314,7 +314,7 @@ function FeedContent() {
                 {/* Footer: author + stats */}
                 <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[#f5f5f5] dark:border-[#222]">
                   {doc.author && (
-                    <span className="text-[9px] text-[#b0b0b0] dark:text-[#555] font-mono truncate max-w-[60px]">
+                    <span className="text-[9px] text-[#b0b0b0] dark:text-[#555] font-sans truncate max-w-[60px]">
                       {doc.author.name.split(" ")[0]}
                     </span>
                   )}
@@ -398,7 +398,7 @@ export default function FeedPage() {
       <div className="px-6 pt-14">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-[#1a1a1a] dark:text-white">テンプレートを探す</h1>
-          <p className="text-xs text-[#9ca3af] mt-1 font-mono">Loading...</p>
+          <p className="text-xs text-[#9ca3af] mt-1 font-sans">Loading...</p>
         </div>
       </div>
     }>

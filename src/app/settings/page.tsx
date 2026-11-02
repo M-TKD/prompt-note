@@ -148,7 +148,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex-1">
               <p className="font-medium text-sm text-[#1a1a1a] dark:text-white">{user.email}</p>
-              <p className="text-[10px] text-[#9ca3af] font-mono">Signed in</p>
+              <p className="text-[10px] text-[#9ca3af] font-sans">Signed in</p>
             </div>
             <button onClick={signOut} className="text-[#9ca3af] hover:text-red-400">
               <LogOut className="w-4 h-4" />
@@ -161,7 +161,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex-1">
               <p className="font-medium text-sm text-[#1a1a1a] dark:text-white">Sign in / Sign up</p>
-              <p className="text-[10px] text-[#9ca3af] font-mono">Sync your prompts across devices</p>
+              <p className="text-[10px] text-[#9ca3af] font-sans">Sync your prompts across devices</p>
             </div>
             <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
           </Link>
@@ -174,12 +174,12 @@ export default function SettingsPage() {
           {hybridStore.isCloud ? (
             <>
               <Cloud className="w-4 h-4 text-[#4F46E5]" />
-              <span className="text-xs text-[#4F46E5] font-mono">クラウド保存中</span>
+              <span className="text-xs text-[#4F46E5] font-sans">クラウド保存中</span>
             </>
           ) : (
             <>
               <HardDrive className="w-4 h-4 text-[#9ca3af]" />
-              <span className="text-xs text-[#9ca3af] font-mono">ローカル保存中</span>
+              <span className="text-xs text-[#9ca3af] font-sans">ローカル保存中</span>
             </>
           )}
         </div>
@@ -187,7 +187,7 @@ export default function SettingsPage() {
 
       {/* Appearance */}
       <section className="mb-8">
-        <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">Appearance</h2>
+        <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">Appearance</h2>
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           <button onClick={toggleDark} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
             <div className="flex items-center gap-2.5">
@@ -203,7 +203,7 @@ export default function SettingsPage() {
 
       {/* AI Review API Key */}
       <section className="mb-8">
-        <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">AI Review</h2>
+        <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">AI Review</h2>
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           {/* Provider selector */}
           <div className="flex items-center gap-2 py-3 border-b border-[#f0f0f0] dark:border-[#333]">
@@ -214,7 +214,7 @@ export default function SettingsPage() {
                 <button
                   key={p}
                   onClick={() => setAiProvider(p)}
-                  className={`text-[10px] px-2.5 py-1 rounded font-mono ${
+                  className={`text-[10px] px-2.5 py-1 rounded font-sans ${
                     aiProvider === p ? "bg-[#1a1a1a] text-white" : "bg-[#f5f5f5] text-[#9ca3af]"
                   }`}
                 >
@@ -240,7 +240,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-[9px] text-[#d1d5db] font-mono">
+              <p className="text-[9px] text-[#d1d5db] font-sans">
                 {aiProvider === "openai" ? "platform.openai.com/api-keys" : "console.anthropic.com/keys"}
               </p>
               <button
@@ -262,7 +262,7 @@ export default function SettingsPage() {
                   localStorage.removeItem("promptnote_ai_apikey");
                   localStorage.removeItem("promptnote_ai_provider");
                 }}
-                className="text-[10px] text-red-400 mt-2 font-mono"
+                className="text-[10px] text-red-400 mt-2 font-sans"
               >
                 Remove key
               </button>
@@ -276,7 +276,7 @@ export default function SettingsPage() {
 
       {/* Guide */}
       <section className="mb-8">
-        <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">Guide</h2>
+        <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">Guide</h2>
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           <Link href="/howto" className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
             <div className="flex items-center gap-2.5">
@@ -312,14 +312,14 @@ export default function SettingsPage() {
 
       {/* Data */}
       <section className="mb-8">
-        <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">Data</h2>
+        <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">Data</h2>
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           <button onClick={exportAll} disabled={exporting} className="w-full flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333]">
             <div className="flex items-center gap-2.5">
               <Download className="w-4 h-4 text-[#9ca3af]" />
               <span className="text-sm text-[#1a1a1a] dark:text-white">Export all data</span>
             </div>
-            <span className="text-[10px] text-[#9ca3af] font-mono">
+            <span className="text-[10px] text-[#9ca3af] font-sans">
               {exporting ? "..." : exportDone ? "Done" : "JSON"}
             </span>
           </button>
@@ -328,7 +328,7 @@ export default function SettingsPage() {
               <Upload className="w-4 h-4 text-[#9ca3af]" />
               <span className="text-sm text-[#1a1a1a] dark:text-white">Import backup</span>
             </div>
-            <span className="text-[10px] text-[#9ca3af] font-mono">
+            <span className="text-[10px] text-[#9ca3af] font-sans">
               {importing ? "..." : importDone ? "Done" : "JSON"}
             </span>
           </button>
@@ -350,16 +350,16 @@ export default function SettingsPage() {
 
       {/* Info */}
       <section className="mb-8">
-        <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">Info</h2>
+        <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">Info</h2>
         <div className="border-t border-[#f0f0f0] dark:border-[#333]">
           <div className="flex items-center justify-between py-3.5 border-b border-[#f0f0f0] dark:border-[#333] text-sm">
             <span className="text-[#1a1a1a] dark:text-white">Version</span>
-            <span className="text-[#9ca3af] font-mono text-xs">0.5.0</span>
+            <span className="text-[#9ca3af] font-sans text-xs">0.5.0</span>
           </div>
         </div>
       </section>
 
-      <p className="text-center text-[10px] text-[#d1d5db] mt-16 font-mono tracking-widest">
+      <p className="text-center text-[10px] text-[#d1d5db] mt-16 font-sans tracking-widest">
         PromptNotes
       </p>
 
@@ -373,7 +373,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="font-bold text-sm text-[#1a1a1a] dark:text-white">データを削除</h3>
-                <p className="text-[10px] text-[#9ca3af] font-mono">この操作は取り消せません</p>
+                <p className="text-[10px] text-[#9ca3af] font-sans">この操作は取り消せません</p>
               </div>
             </div>
             <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] leading-relaxed">

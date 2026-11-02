@@ -18,7 +18,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+画面の書体はCraftbaseと共通の日本語フォント指定を使い、`src/app/globals.css` の `--font-product-sans` で管理します。コード・記法・識別子の等幅表示には、`next/font` で読み込むGeist Monoを使います。
 
 ## Learn More
 
