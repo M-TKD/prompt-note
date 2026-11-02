@@ -291,14 +291,14 @@ export default function ProfilePage() {
           </div>
 
           {/* Email (read-only) */}
-          <p className="text-xs text-[#9ca3af] mt-1 font-mono">
+          <p className="text-xs text-[#9ca3af] mt-1 font-sans">
             {user?.email || "No email"}
           </p>
         </section>
 
         {/* Stats row */}
         <section className="mb-8">
-          <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">
+          <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">
             Stats
           </h2>
           <div className="grid grid-cols-3 gap-3">
@@ -315,7 +315,7 @@ export default function ProfilePage() {
                 <p className="text-xl font-bold text-[#1a1a1a] dark:text-white">
                   {value}
                 </p>
-                <p className="text-[10px] font-mono text-[#9ca3af] mt-0.5 uppercase tracking-widest">
+                <p className="text-[10px] font-sans text-[#9ca3af] mt-0.5 uppercase tracking-widest">
                   {label}
                 </p>
               </div>
@@ -325,7 +325,7 @@ export default function ProfilePage() {
 
         {/* Public prompts */}
         <section className="mb-8">
-          <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">
+          <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">
             Public Prompts
           </h2>
           <div className="border-t border-[#f0f0f0] dark:border-[#333]">
@@ -351,7 +351,7 @@ export default function ProfilePage() {
                       {doc.title || "Untitled"}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-mono text-[#4F46E5]">
+                      <span className="text-[10px] font-sans text-[#4F46E5]">
                         {doc.type}
                       </span>
                       <span className="text-[10px] text-[#d1d5db]">
@@ -368,7 +368,7 @@ export default function ProfilePage() {
 
         {/* Account */}
         <section className="mb-8">
-          <h2 className="text-[10px] font-mono text-[#9ca3af] mb-3 uppercase tracking-widest">
+          <h2 className="text-[10px] font-sans text-[#9ca3af] mb-3 uppercase tracking-widest">
             Account
           </h2>
           <div className="border-t border-[#f0f0f0] dark:border-[#333]">
@@ -377,7 +377,7 @@ export default function ProfilePage() {
               <span className="text-sm text-[#1a1a1a] dark:text-white">
                 Provider
               </span>
-              <span className="text-xs font-mono text-[#9ca3af]">
+              <span className="text-xs font-sans text-[#9ca3af]">
                 {providerLabel}
               </span>
             </div>
@@ -433,7 +433,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <p className="text-center text-[10px] text-[#d1d5db] mt-16 font-mono tracking-widest">
+        <p className="text-center text-[10px] text-[#d1d5db] mt-16 font-sans tracking-widest">
           PromptNotes
         </p>
       </div>

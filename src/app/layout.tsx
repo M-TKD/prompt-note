@@ -1,15 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/Toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
+// コード・記法・URLなど、桁を揃える箇所には既存の等幅書体を使う。
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -76,8 +72,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white dark:bg-[#1a1a1a]`}
-        style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}
+        className={`${geistMono.variable} antialiased min-h-screen bg-white dark:bg-[#1a1a1a]`}
       >
         <AuthProvider>
           <ToastProvider>

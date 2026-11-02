@@ -220,14 +220,14 @@ function EditorContent() {
           <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
         </button>
         <div className="flex items-center gap-2">
-          <span className="hidden sm:inline text-[11px] text-[#d1d5db] font-mono tracking-wider uppercase">
+          <span className="hidden sm:inline text-[11px] text-[#d1d5db] font-sans tracking-wider uppercase">
             {isQuickMemo ? "メモ" : TYPE_CONFIG[docType].label}
           </span>
           {draftRestored && (
-            <span className="text-[9px] text-[#4F46E5] font-mono">下書きを復元しました</span>
+            <span className="text-[9px] text-[#4F46E5] font-sans">下書きを復元しました</span>
           )}
           {/* View mode toggle (Edit / Split / Preview) */}
-          <div className="flex items-center text-[10px] font-mono rounded bg-[#f5f5f5] dark:bg-[#222] p-0.5">
+          <div className="flex items-center text-[10px] font-sans rounded bg-[#f5f5f5] dark:bg-[#222] p-0.5">
             <button
               aria-pressed={viewMode === "edit"}
               onClick={() => setViewMode("edit")}
@@ -251,7 +251,7 @@ function EditorContent() {
             </button>
           </div>
           {hasContent && (
-            <button aria-label="AIでプロンプトを評価" onClick={() => setShowAIReview(true)} className="text-[10px] px-1.5 py-0.5 rounded font-mono text-[#6b7280] hover:text-[#4F46E5]">
+            <button aria-label="AIでプロンプトを評価" onClick={() => setShowAIReview(true)} className="text-[10px] px-1.5 py-0.5 rounded font-sans text-[#6b7280] hover:text-[#4F46E5]">
               AI評価
             </button>
           )}
@@ -269,7 +269,7 @@ function EditorContent() {
 
       {/* Type & Visibility & Promote */}
       <div className="px-4 py-2 flex flex-wrap items-center gap-2 border-b border-[#f0f0f0] dark:border-[#333]">
-        <span className={`text-[10px] px-2 py-0.5 rounded font-mono tracking-wide ${
+        <span className={`text-[10px] px-2 py-0.5 rounded font-sans tracking-wide ${
           isNote ? "bg-[#f5f5f5] dark:bg-[#333] text-[#9ca3af]" :
           isPrompt ? "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]" : "bg-[#f5f5f5] dark:bg-[#333] text-[#6b7280]"
         }`}>
@@ -280,7 +280,7 @@ function EditorContent() {
             disabled={!hybridStore.isCloud}
             title={!hybridStore.isCloud ? "公開するにはログインしてクラウドへ保存してください" : undefined}
             onClick={() => setVisibility(visibility === "public" ? "private" : "public")}
-            className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-mono ${
+            className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-sans ${
               visibility === "public" ? "bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5]" : "bg-[#f5f5f5] dark:bg-[#333] text-[#9ca3af]"
             }`}
           >
@@ -292,7 +292,7 @@ function EditorContent() {
         {variables.length > 0 && (
           <button
             onClick={() => setShowVariables(true)}
-            className="text-[10px] px-2 py-0.5 rounded bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5] flex items-center gap-1 font-mono"
+            className="text-[10px] px-2 py-0.5 rounded bg-[#EEF2FF] dark:bg-[#4F46E5]/20 text-[#4F46E5] flex items-center gap-1 font-sans"
           >
             <Variable className="w-2.5 h-2.5" />
             変数 {variables.length}個
@@ -357,7 +357,7 @@ function EditorContent() {
       {/* Tags */}
       <div className="px-6 py-1.5 flex items-center gap-1.5 flex-wrap border-b border-[#f0f0f0] dark:border-[#333]">
         {tags.map((tag) => (
-          <span key={tag} className="text-[10px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#f5f5f5] dark:bg-[#333] flex items-center gap-1 font-mono">
+          <span key={tag} className="text-[10px] text-[#6b7280] px-1.5 py-0.5 rounded bg-[#f5f5f5] dark:bg-[#333] flex items-center gap-1 font-sans">
             #{tag}
             <button aria-label={`${tag}タグを削除`} onClick={() => setTags(tags.filter((t) => t !== tag))} className="text-[#d1d5db] hover:text-[#6b7280]">✕</button>
           </span>
@@ -369,7 +369,7 @@ function EditorContent() {
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); handleAddTag(); } }}
           aria-label="タグを追加"
           placeholder="タグを追加..."
-          className="text-[10px] outline-none min-w-[60px] flex-1 text-[#9ca3af] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent font-mono"
+          className="text-[10px] outline-none min-w-[60px] flex-1 text-[#9ca3af] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent font-sans"
         />
       </div>
 
@@ -389,7 +389,7 @@ function EditorContent() {
               onChange={(e) => setBodyMd(e.target.value)}
               aria-label="ノートの本文"
               placeholder={isQuickMemo ? "メモを書いてください..." : "AIへの指示を書いてください...\n\n{{変数名}} を使うと、繰り返し使えるテンプレートになります"}
-              className="w-full h-full p-6 outline-none resize-none font-mono text-sm leading-relaxed text-[#404040] dark:text-[#e5e7eb] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent"
+              className="w-full h-full p-6 outline-none resize-none font-sans text-sm leading-relaxed text-[#404040] dark:text-[#e5e7eb] placeholder:text-[#e5e7eb] dark:placeholder:text-[#444] bg-transparent"
               autoFocus
             />
           </div>
@@ -474,7 +474,7 @@ function EditorContent() {
             </button>
           )}
           {/* Word count */}
-          <span className="ml-auto text-[9px] text-[#d1d5db] font-mono pr-2 whitespace-nowrap shrink-0">{wordCount}字</span>
+          <span className="ml-auto text-[9px] text-[#d1d5db] font-sans pr-2 whitespace-nowrap shrink-0">{wordCount}字</span>
         </div>
       </div>
 
@@ -526,7 +526,7 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
       <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 space-y-3 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
         <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
         <h2 className="font-bold text-base text-center tracking-tight dark:text-white">テンプレートの変数</h2>
-        <p className="text-[11px] text-[#9ca3af] text-center font-mono">変数を埋めて、自分の仕事に合わせてください</p>
+        <p className="text-[11px] text-[#9ca3af] text-center font-sans">変数を埋めて、自分の仕事に合わせてください</p>
 
         <div className="space-y-3 mt-4">
           {vars.map((v) => (
@@ -537,7 +537,7 @@ function VariablesSheet({ bodyMd, onFill, onClose }: { bodyMd: string; onFill: (
                 value={values[v.name] || ""}
                 onChange={(e) => setValues({ ...values, [v.name]: e.target.value })}
                 placeholder={v.name}
-                className="w-full px-3 py-2 border border-[#f0f0f0] dark:border-[#333] rounded-lg text-sm outline-none focus:border-[#4F46E5] dark:bg-[#222] dark:text-white font-mono"
+                className="w-full px-3 py-2 border border-[#f0f0f0] dark:border-[#333] rounded-lg text-sm outline-none focus:border-[#4F46E5] dark:bg-[#222] dark:text-white font-sans"
               />
             </div>
           ))}
@@ -573,15 +573,15 @@ function PromoteSheet({ onPromote, onSendToAI, onClose }: { onPromote: (t: Docum
       <div className="bg-white dark:bg-[#1a1a1a] w-full max-w-lg rounded-t-2xl p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
         <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
         <h2 className="font-bold text-base text-center tracking-tight dark:text-white">Boost</h2>
-        <p className="text-[11px] text-[#9ca3af] text-center font-mono">メモをPromptに昇格 → AI添削・共有・送信</p>
+        <p className="text-[11px] text-[#9ca3af] text-center font-sans">メモをPromptに昇格 → AI添削・共有・送信</p>
         <button onClick={() => onPromote("prompt")} className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#4F46E5]/30 hover:bg-[#EEF2FF]/20 dark:hover:bg-[#222]">
           <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center"><WandSparkles className="w-4 h-4 text-[#4F46E5]" /></div>
-          <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">Prompt</p><p className="text-[10px] text-[#9ca3af] font-mono">Save as AI instruction</p></div>
+          <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">Prompt</p><p className="text-[10px] text-[#9ca3af] font-sans">Save as AI instruction</p></div>
           <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
         </button>
         <button onClick={() => onPromote("template")} className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#9ca3af]/30 dark:hover:bg-[#222]">
           <div className="w-9 h-9 rounded-lg bg-[#f5f5f5] dark:bg-[#333] flex items-center justify-center"><Copy className="w-4 h-4 text-[#6b7280]" /></div>
-          <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">Template</p><p className="text-[10px] text-[#9ca3af] font-mono">{"Reusable with {{variables}}"}</p></div>
+          <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">Template</p><p className="text-[10px] text-[#9ca3af] font-sans">{"Reusable with {{variables}}"}</p></div>
           <ChevronRight className="w-4 h-4 text-[#d1d5db]" />
         </button>
         <div className="pt-2">
@@ -631,14 +631,14 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
         <h2 className="font-bold text-base text-center tracking-tight dark:text-white">コピーしてAIで使う</h2>
         <p className="text-xs text-[#6b7280] dark:text-[#aaa]">AIを開いたら、コピーした本文を入力欄に貼り付けてください。</p>
         <div className="bg-[#fafafa] dark:bg-[#222] p-3 rounded-lg mb-2 border border-[#f0f0f0] dark:border-[#333]">
-          <p className="text-[10px] text-[#9ca3af] mb-1 font-mono uppercase tracking-wider">Prompt</p>
+          <p className="text-[10px] text-[#9ca3af] mb-1 font-sans uppercase tracking-wider">Prompt</p>
           <p className="text-sm text-[#404040] dark:text-[#e5e7eb] line-clamp-3 leading-relaxed">{promptText}</p>
         </div>
         <div className="space-y-1">
           {AI_APPS.map((app) => (
             <button key={app.id} onClick={() => handleSend(app)} className="w-full flex items-center gap-3 p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444]">
               <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#fafafa] dark:bg-[#222]">{AI_LOGOS[app.id] || app.icon}</span>
-              <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">{app.name}</p><p className="text-[10px] text-[#9ca3af] font-mono">コピーして開く（貼り付けが必要）</p></div>
+              <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">{app.name}</p><p className="text-[10px] text-[#9ca3af] font-sans">コピーして開く（貼り付けが必要）</p></div>
               {copiedId === app.id ? <Check className="w-4 h-4 text-[#4F46E5]" /> : <ExternalLink className="w-4 h-4 text-[#d1d5db]" />}
             </button>
           ))}
@@ -646,7 +646,7 @@ function SendToAISheet({ promptText, onClose }: { promptText: string; onClose: (
         <div className="border-t border-[#f0f0f0] dark:border-[#333] pt-2">
           <button onClick={handleCopyOnly} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#fafafa] dark:hover:bg-[#222]">
             <span className="w-8 h-8 flex items-center justify-center bg-[#f5f5f5] dark:bg-[#333] rounded-lg"><Copy className="w-4 h-4 text-[#6b7280]" /></span>
-            <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">本文をコピー</p><p className="text-[10px] text-[#9ca3af] font-mono">クリップボードにコピーします</p></div>
+            <div className="text-left flex-1"><p className="font-medium text-sm dark:text-white">本文をコピー</p><p className="text-[10px] text-[#9ca3af] font-sans">クリップボードにコピーします</p></div>
             {copiedId === "clipboard" ? <Check className="w-4 h-4 text-[#4F46E5]" /> : null}
           </button>
         </div>
@@ -732,10 +732,10 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
         <h2 className="font-bold text-base text-center tracking-tight mb-4 dark:text-white">AI評価</h2>
         {state === "idle" && (
           <div className="space-y-4">
-            <p className="text-xs text-[#9ca3af] text-center font-mono">5つの軸でプロンプトを評価</p>
+            <p className="text-xs text-[#9ca3af] text-center font-sans">5つの軸でプロンプトを評価</p>
             <div className="space-y-1.5 p-3 rounded-lg bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333]">
               {Object.entries(axisLabels).map(([key, label]) => (
-                <div key={key} className="flex items-center gap-2 text-xs"><span className="w-1 h-1 rounded-full bg-[#4F46E5]" /><span className="text-[#6b7280] font-mono">{label}</span></div>
+                <div key={key} className="flex items-center gap-2 text-xs"><span className="w-1 h-1 rounded-full bg-[#4F46E5]" /><span className="text-[#6b7280] font-sans">{label}</span></div>
               ))}
             </div>
             {!hasOwnKey && (
@@ -749,7 +749,7 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
           </div>
         )}
         {state === "loading" && (
-          <div className="text-center py-16"><div className="animate-spin w-5 h-5 border-2 border-[#1a1a1a] dark:border-white border-t-transparent rounded-full mx-auto mb-4" /><p className="text-[#9ca3af] text-xs font-mono">AIが分析中...</p></div>
+          <div className="text-center py-16"><div className="animate-spin w-5 h-5 border-2 border-[#1a1a1a] dark:border-white border-t-transparent rounded-full mx-auto mb-4" /><p className="text-[#9ca3af] text-xs font-sans">AIが分析中...</p></div>
         )}
         {state === "done" && (
           <div className="space-y-4">
@@ -758,14 +758,14 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
               <p className="mt-1">入力した本文は分析していません。点数と改善案は固定の表示例で、本文への適用・保存はできません。</p>
               <p className="mt-2">実際の評価には<a href="/auth" className="underline">ログイン</a>、または<a href="/settings" className="underline">自分のAPIキーの設定</a>が必要です。利用可能なAI接続がない場合も見本になります。</p>
             </div>}
-            <div className="text-center py-4"><p className="text-[10px] text-[#9ca3af] mb-1 font-mono uppercase tracking-wider">Overall</p><p className={`text-4xl font-bold ${gradeColor[overall] || ""}`}>{overall}</p></div>
+            <div className="text-center py-4"><p className="text-[10px] text-[#9ca3af] mb-1 font-sans uppercase tracking-wider">Overall</p><p className={`text-4xl font-bold ${gradeColor[overall] || ""}`}>{overall}</p></div>
             <div className="space-y-2">
               {Object.entries(scores).map(([key, val]) => (
-                <div key={key} className="flex items-center gap-2 text-xs"><span className="w-20 text-[#9ca3af] font-mono text-[11px]">{axisLabels[key] || key}</span><span className={`font-bold w-5 ${gradeColor[val.grade] || ""}`}>{val.grade}</span><span className="text-[#9ca3af] text-[11px] flex-1">{val.feedback}</span></div>
+                <div key={key} className="flex items-center gap-2 text-xs"><span className="w-20 text-[#9ca3af] font-sans text-[11px]">{axisLabels[key] || key}</span><span className={`font-bold w-5 ${gradeColor[val.grade] || ""}`}>{val.grade}</span><span className="text-[#9ca3af] text-[11px] flex-1">{val.feedback}</span></div>
               ))}
             </div>
             <div className="bg-[#EEF2FF]/30 dark:bg-[#4F46E5]/10 border border-[#EEF2FF] dark:border-[#4F46E5]/20 p-4 rounded-xl">
-              <p className="font-medium text-xs mb-2 text-[#4F46E5] font-mono uppercase tracking-wider">Improved</p>
+              <p className="font-medium text-xs mb-2 text-[#4F46E5] font-sans uppercase tracking-wider">Improved</p>
               <div className="markdown-preview text-sm"><MarkdownPreview content={suggestion} /></div>
             </div>
             {!isDemo && <div className="flex gap-2">
@@ -779,10 +779,10 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
               }} className="flex-1 py-2.5 bg-[#1a1a1a] dark:bg-white text-white dark:text-[#1a1a1a] font-medium rounded-xl text-xs">本文に適用</button>
             </div>}
             {usage && !hasOwnKey && (
-              <p className="text-[10px] text-[#9ca3af] text-center font-mono">今月 {usage.used}/{usage.limit} 回使用</p>
+              <p className="text-[10px] text-[#9ca3af] text-center font-sans">今月 {usage.used}/{usage.limit} 回使用</p>
             )}
             {!isDemo && <div className="flex items-center justify-center gap-4 text-[11px] text-[#d1d5db]">
-              <span className="font-mono">Helpful?</span>
+              <span className="font-sans">Helpful?</span>
               <button className="p-2 hover:text-[#1a1a1a] dark:hover:text-white"><ThumbsUp className="w-3.5 h-3.5" /></button>
               <button className="p-2 hover:text-[#1a1a1a] dark:hover:text-white"><ThumbsDown className="w-3.5 h-3.5" /></button>
             </div>}
@@ -790,7 +790,7 @@ function AIReviewSheet({ bodyMd, onApply, onClose, onUsageUpdate, onLimitReached
         )}
         {state === "error" && (
           <div className="text-center py-12 space-y-3">
-            <p className="text-[#9ca3af] text-xs font-mono">{errorMsg || "Review failed"}</p>
+            <p className="text-[#9ca3af] text-xs font-sans">{errorMsg || "Review failed"}</p>
             {isLimitReached && (
               <div className="space-y-2">
                 <p className="text-[10px] text-[#9ca3af]">Settings で自分のAPIキーを設定すると無制限に利用できます</p>
@@ -864,33 +864,33 @@ function VersionHistorySheet({
       >
         <div className="w-8 h-0.5 bg-[#e5e7eb] dark:bg-[#444] rounded-full mx-auto mb-2" />
         <h2 className="font-bold text-base text-center tracking-tight dark:text-white">履歴</h2>
-        <p className="text-[11px] text-[#9ca3af] text-center font-mono mb-4">Version History</p>
+        <p className="text-[11px] text-[#9ca3af] text-center font-sans mb-4">Version History</p>
 
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin w-5 h-5 border-2 border-[#1a1a1a] dark:border-white border-t-transparent rounded-full mx-auto mb-3" />
-            <p className="text-[#9ca3af] text-xs font-mono">読み込み中...</p>
+            <p className="text-[#9ca3af] text-xs font-sans">読み込み中...</p>
           </div>
         ) : versions.length === 0 ? (
           <div className="text-center py-12">
             <History className="w-8 h-8 text-[#e5e7eb] dark:text-[#444] mx-auto mb-3" />
-            <p className="text-[#9ca3af] text-xs font-mono">バージョン履歴はまだありません</p>
-            <p className="text-[#d1d5db] text-[10px] font-mono mt-1">保存するたびに履歴が作成されます</p>
+            <p className="text-[#9ca3af] text-xs font-sans">バージョン履歴はまだありません</p>
+            <p className="text-[#d1d5db] text-[10px] font-sans mt-1">保存するたびに履歴が作成されます</p>
           </div>
         ) : selectedVersion ? (
           <div className="space-y-3">
             <button
               onClick={() => setSelectedVersion(null)}
-              className="text-[11px] text-[#9ca3af] font-mono flex items-center gap-1"
+              className="text-[11px] text-[#9ca3af] font-sans flex items-center gap-1"
             >
               <ArrowLeft className="w-3 h-3" /> 一覧に戻る
             </button>
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-mono text-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/20 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-sans text-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/20 px-2 py-0.5 rounded">
                   v{selectedVersion.versionNumber}
                 </span>
-                <span className="text-[10px] text-[#9ca3af] font-mono ml-2">
+                <span className="text-[10px] text-[#9ca3af] font-sans ml-2">
                   {formatDate(selectedVersion.createdAt)}
                 </span>
               </div>
@@ -899,7 +899,7 @@ function VersionHistorySheet({
               <p className="text-sm font-medium text-[#1a1a1a] dark:text-white">{selectedVersion.title}</p>
             )}
             <div className="bg-[#fafafa] dark:bg-[#222] border border-[#f0f0f0] dark:border-[#333] rounded-lg p-4 max-h-[40vh] overflow-auto">
-              <pre className="text-xs font-mono text-[#404040] dark:text-[#e5e7eb] whitespace-pre-wrap leading-relaxed">
+              <pre className="text-xs font-sans text-[#404040] dark:text-[#e5e7eb] whitespace-pre-wrap leading-relaxed">
                 {selectedVersion.bodyMd}
               </pre>
             </div>
@@ -920,14 +920,14 @@ function VersionHistorySheet({
                 onClick={() => setSelectedVersion(v)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl border border-[#f0f0f0] dark:border-[#333] hover:border-[#d1d5db] dark:hover:border-[#444] text-left"
               >
-                <span className="text-[10px] font-mono text-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/20 px-2 py-0.5 rounded min-w-[36px] text-center">
+                <span className="text-[10px] font-sans text-[#4F46E5] bg-[#EEF2FF] dark:bg-[#4F46E5]/20 px-2 py-0.5 rounded min-w-[36px] text-center">
                   v{v.versionNumber}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-[#1a1a1a] dark:text-white truncate">
                     {getPreview(v.bodyMd) || "（空）"}
                   </p>
-                  <p className="text-[10px] text-[#9ca3af] font-mono">{formatDate(v.createdAt)}</p>
+                  <p className="text-[10px] text-[#9ca3af] font-sans">{formatDate(v.createdAt)}</p>
                 </div>
                 <ChevronRight className="w-3 h-3 text-[#d1d5db] flex-shrink-0" />
               </button>
@@ -945,7 +945,7 @@ function VersionHistorySheet({
 
 export default function EditorPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen text-[#d1d5db] text-xs font-mono">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen text-[#d1d5db] text-xs font-sans">Loading...</div>}>
       <EditorContent />
     </Suspense>
   );

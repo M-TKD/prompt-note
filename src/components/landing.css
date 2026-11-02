@@ -9,7 +9,7 @@
   --pn-accent-soft: #eeedff;
   background: var(--pn-paper);
   color: var(--pn-ink);
-  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  font-family: var(--font-product-sans);
   font-size: 16px;
   line-height: 1.8;
   text-align: left;

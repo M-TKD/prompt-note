@@ -2,6 +2,11 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Craftbaseと同じ書体を、紹介・作業画面・入力欄で共用する。 */
+:root {
+  --font-product-sans: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
+}
+
 @theme inline {
   --color-background: #ffffff;
   --color-foreground: #1a1a1a;
@@ -10,11 +15,12 @@
   --color-muted: #9ca3af;
   --color-border: #f0f0f0;
   --color-surface: #fafafa;
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-product-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
+  font-family: var(--font-product-sans);
   background: var(--color-background);
   color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
@@ -82,7 +88,7 @@ body {
 
 /* Semantic HTML: figure */
 .markdown-preview figure { margin: 0.75rem 0; }
-.markdown-preview figcaption { font-size: 0.8125rem; color: #9ca3af; text-align: center; margin-top: 0.25rem; font-family: var(--font-mono); }
+.markdown-preview figcaption { font-size: 0.8125rem; color: #9ca3af; text-align: center; margin-top: 0.25rem; font-family: var(--font-product-sans); }
 
 /* Images */
 .markdown-preview img { max-width: 100%; height: auto; border-radius: 4px; margin: 0.5rem 0; }
